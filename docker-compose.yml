@@ -1,0 +1,69 @@
+version: '3.9'
+
+services:
+
+  # setup MongoDB cluster for production
+  mongo-replica-setup:
+    container_name: mongo-setup
+    image: 'mongo:latest'
+    networks:
+      - netApplication
+    volumes:
+      - ./.docker/mongodb/scripts/mongosetup.sh:/scripts/mongosetup.sh
+    entrypoint: [ "bash", "/scripts/mongosetup.sh" ]
+    env_file:
+      - .env
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGO_REPLICA_SET_NAME: ${MONGO_REPLICA_SET_NAME}
+    depends_on:
+      - mongo1
+
+  mongo1:
+    container_name: 'mongo1'
+    image: 'mongo:latest'
+    command:
+      [
+        "-f",
+        "/etc/mongod.conf",
+        "--keyFile",
+        "/auth/file.key",
+        "--replSet",
+        "${MONGO_REPLICA_SET_NAME}",
+        "--bind_ip_all"
+      ]
+    ports:
+      - 27017:27017
+    networks:
+      - netApplication
+    volumes:
+      - mongoData1:/data/db
+      - mongoLog1:/var/log/mongodb
+      - mongoConfig1:/data/configdb
+      - ./.docker/mongodb/mongod.conf:/etc/mongod.conf
+      - ./.docker/mongodb/file.key:/auth/file.key
+      - ./.docker/mongodb/docker-entrypoint-initdb.d/:/docker-entrypoint-initdb.d/
+    healthcheck:
+      test: echo 'rs.status().ok' | mongosh admin -u $${MONGO_INITDB_ROOT_USERNAME} -p $${MONGO_INITDB_ROOT_PASSWORD} --quiet | grep 1
+      interval: 30s
+      start_period: 60s
+    env_file:
+      - .env
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
+      MONGO_INITDB_USERNAME: ${MONGO_INITDB_USERNAME}
+      MONGO_INITDB_PASSWORD: ${MONGO_INITDB_PASSWORD}
+      MONGO_REPLICA_SET_NAME: ${MONGO_REPLICA_SET_NAME}
+
+volumes:
+  mongoData1:
+  mongoLog1:
+  mongoConfig1:
+
+
+networks:
+  netApplication:
+    name: netApplication
