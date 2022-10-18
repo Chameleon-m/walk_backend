@@ -1,0 +1,279 @@
+{
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "schemes": [
+    "http"
+  ],
+  "swagger": "2.0",
+  "info": {
+    "description": "This is a places API.",
+    "title": "Places API",
+    "contact": {
+      "name": "Dmitry Korolev",
+      "url": "https://github.com/Chameleon-m",
+      "email": "korolev.d.l@yandex.ru"
+    },
+    "version": "0.0.1"
+  },
+  "host": "localhost:8080",
+  "basePath": "/v1",
+  "paths": {
+    "/categories": {
+      "get": {
+        "description": "Returns list of categories",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "categories"
+        ],
+        "operationId": "ListCategories",
+        "responses": {
+          "200": {
+            "description": "Successful operation"
+          }
+        }
+      },
+      "post": {
+        "description": "Create a new category",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "categories"
+        ],
+        "operationId": "newCategory",
+        "responses": {
+          "201": {
+            "description": "Successful operation"
+          },
+          "400": {
+            "description": "Invalid input"
+          }
+        }
+      }
+    },
+    "/categories/{id}": {
+      "get": {
+        "description": "Get one category",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "categories"
+        ],
+        "operationId": "findCategoryByID",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "category ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "404": {
+            "description": "Invalid category ID"
+          }
+        }
+      },
+      "put": {
+        "description": "Update an existing category",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "categories"
+        ],
+        "operationId": "updateCategory",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "ID of the category",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful operation"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "404": {
+            "description": "Invalid category ID"
+          }
+        }
+      },
+      "delete": {
+        "description": "Delete an existing category",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "categories"
+        ],
+        "operationId": "deleteCategory",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "ID of the category",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful operation"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "404": {
+            "description": "Invalid category ID"
+          }
+        }
+      }
+    },
+    "/places": {
+      "get": {
+        "description": "Returns list of places",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "places"
+        ],
+        "operationId": "listPlaces"
+      },
+      "post": {
+        "description": "Create a new place",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "places"
+        ],
+        "operationId": "newPlace",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "Name",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "Description",
+            "in": "query"
+          },
+          {
+            "name": "Category",
+            "in": "query"
+          },
+          {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "name": "Tags",
+            "in": "query"
+          }
+        ]
+      }
+    },
+    "/places/search": {
+      "get": {
+        "description": "Search places based on name, description and tags",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "places"
+        ],
+        "operationId": "findPlace",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "place name, description and tags",
+            "name": "q",
+            "in": "query",
+            "required": true
+          }
+        ]
+      }
+    },
+    "/places/{id}": {
+      "get": {
+        "description": "Get one place",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "places"
+        ],
+        "operationId": "findPlaceByID",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "place ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ]
+      },
+      "put": {
+        "description": "Update an existing place",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "places"
+        ],
+        "operationId": "updatePlace",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "ID of the place",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ]
+      },
+      "delete": {
+        "description": "Delete an existing place",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "places"
+        ],
+        "operationId": "deletePlace",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "ID of the place",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ]
+      }
+    }
+  }
+}

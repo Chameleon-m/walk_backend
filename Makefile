@@ -27,3 +27,10 @@ migrate-version:
 	$(migrateCommand) version
 migrate-create-json:
 	$(migrateCommand) create -ext json -dir migrations $(name)
+
+swagger-generate:
+	swagger generate spec -o ./swagger.json
+swagger-serve:
+	swagger serve ./swagger.json
+swagger-serve-f:
+	swagger serve -F swagger ./swagger.json

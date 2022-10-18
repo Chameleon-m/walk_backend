@@ -1,4 +1,9 @@
-# walk_backend
+### walk_backend
+
+### RUN
+```
+make api
+```
 
 ### ENV
 Set environment
@@ -50,3 +55,16 @@ Once the replica set is up, you will need to update hostnames in local /etc/host
 127.0.0.1 mongo1
 ```
 **NOTE**: In windows, the hosts file is located at C:\Windows\System32\drivers\etc\hosts
+
+
+### SWAGGER
+
+```
+make swagger-generate
+```
+```
+make swagger-serve
+```
+```
+make swagger-serve-f
+```
