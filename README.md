@@ -1,11 +1,11 @@
-### walk_backend
+# walk_backend
 
-### RUN
+# RUN
 ```
 make api
 ```
 
-### ENV
+# ENV
 Set environment
 Linux
 ```
@@ -26,17 +26,17 @@ Or
 ```
 cp .env.example .env
 ```
-### DB
+# DB
 
 ## MongoDB
-# Gegerate keyFile
+### Gegerate keyFile
 ```
 openssl rand -base64 700 > ./docker/mongodb/file.key
 chmod 400 ./docker/mongodb/file.key
 sudo chown 999:999 ./docker/mongodb/file.key
 ```
 
-# Docker
+### Docker
 Run 
 ```
 docker-compose up -d
@@ -49,7 +49,7 @@ docker run --rm -d -p 27017:27017 -h $(hostname) --name mongo1 mongo:latest --re
 docker stop mongo1
 ```
 
-# Update hostnames
+### Update hostnames
 Once the replica set is up, you will need to update hostnames in local /etc/hosts file.
 ```
 127.0.0.1 mongo1
@@ -57,7 +57,7 @@ Once the replica set is up, you will need to update hostnames in local /etc/host
 **NOTE**: In windows, the hosts file is located at C:\Windows\System32\drivers\etc\hosts
 
 
-### SWAGGER
+# SWAGGER
 
 ```
 make swagger-generate
