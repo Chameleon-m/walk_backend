@@ -1,0 +1,6 @@
+[
+    {
+        "dropIndexes": "places",
+        "index": "places_search_key_v1"
+    }
+]

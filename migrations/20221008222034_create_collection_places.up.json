@@ -1,0 +1,12 @@
+[
+    {
+        "create": "places",
+        "clusteredIndex": {
+            "key": {
+                "_id": 1
+            },
+            "unique": true,
+            "name": "places_clustered_key"
+        }
+    }
+]

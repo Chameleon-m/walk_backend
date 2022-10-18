@@ -1,0 +1,21 @@
+[
+    {
+        "createIndexes": "places",
+        "indexes": [
+            {
+                "key": {
+                    "name": "text",
+                    "description": "text",
+                    "tags": "text"
+                },
+                "name": "places_search_key_v1",
+                "default_language": "russian",
+                "weights": {
+                    "name": 5,
+                    "description": 3,
+                    "tags": 2
+                }
+            }
+        ]
+    }
+]
