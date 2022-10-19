@@ -1,11 +1,13 @@
 package repository
 
 import (
+	"sync"
 	"time"
 	"walk_backend/model"
 )
 
 type PlaceInMemoryRepository struct {
+	lock   sync.RWMutex
 	Places model.PlaceList
 }
 
@@ -17,6 +19,9 @@ func NewPlaceInMemoryRepository() *PlaceInMemoryRepository {
 }
 
 func (r *PlaceInMemoryRepository) Find(id model.ID) (*model.Place, error) {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
+
 	for k := 0; k < len(r.Places); k++ {
 		if r.Places[k].ID == id {
 			return r.Places[k], nil
@@ -51,11 +56,19 @@ func (r *PlaceInMemoryRepository) Create(place model.Place) (model.ID, error) {
 		place.ID = id
 	}
 	place.CreatedAt = time.Now()
+
+	r.lock.Lock()
 	r.Places = append(r.Places, &place)
+	r.lock.Unlock()
+
 	return place.ID, nil
 }
 
 func (r *PlaceInMemoryRepository) Update(place model.Place) error {
+
+	r.lock.Lock()
+	defer r.lock.Unlock()
+
 	for k := 0; k < len(r.Places); k++ {
 		if r.Places[k].ID == place.ID {
 			place.UpdatedAt = time.Now()
@@ -68,6 +81,10 @@ func (r *PlaceInMemoryRepository) Update(place model.Place) error {
 }
 
 func (r *PlaceInMemoryRepository) Delete(place model.Place) error {
+
+	r.lock.Lock()
+	defer r.lock.Unlock()
+
 	for k := 0; k < len(r.Places); k++ {
 		if r.Places[k].ID == place.ID {
 			r.Places = append(r.Places[:k], r.Places[k+1:]...)
