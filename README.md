@@ -41,6 +41,9 @@ Run
 ```
 docker-compose up -d
 ```
+```
+docker-compose down
+```
 Or
 ```
 docker run --rm -d -p 27017:27017 -h $(hostname) --name mongo1 mongo:latest --replSet=rs0 && sleep 4 && docker exec mongo mongosh --eval "rs.initiate();"
