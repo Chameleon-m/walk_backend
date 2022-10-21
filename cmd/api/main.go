@@ -3,10 +3,16 @@
 // This is a places API.
 //
 //		Schemes: http
-//	 Host: localhost:8080
+//	    Host: localhost:8080
 //		BasePath: /v1
 //		Version: 0.0.1
 //		Contact: Dmitry Korolev <korolev.d.l@yandex.ru> https://github.com/Chameleon-m
+//
+//		SecurityDefinitions:
+//			api_key:
+//				type: apiKey
+//				name: Authorization
+//				in: header
 //
 //		Consumes:
 //		- application/json
@@ -24,6 +30,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -33,12 +40,15 @@ import (
 	"walk_backend/repository"
 	"walk_backend/service"
 
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/mongo/mongodriver"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
+var authHandler *handlers.AuthHandler
 var placesHandler *handlers.PlacesHandler
 var categoriesHandler *handlers.CategoriesHandler
 
@@ -51,6 +61,7 @@ func main() {
 	ctxSignal, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
+	// DB
 	ctx := context.Background()
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(os.Getenv("MONGO_URI")))
 	if err != nil {
@@ -67,6 +78,35 @@ func main() {
 	log.Println("Connected to MongoDB")
 
 	mongoDB := os.Getenv("MONGO_INITDB_DATABASE")
+
+	// session
+	sessionSecret := os.Getenv("SESSION_SECRET")
+	sessionName := os.Getenv("SESSION_NAME")
+	sessionPath := os.Getenv("SESSION_PATH")
+	sessionDomain := os.Getenv("SESSION_DOMAIN")
+	sessionMaxAge, err := strconv.Atoi(os.Getenv("SESSION_MAX_AGE"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// session store // TODO Remake
+	colectionSessions := client.Database(mongoDB).Collection("sessions")
+	sessionStore := mongodriver.NewStore(colectionSessions, sessionMaxAge, false, []byte(sessionSecret))
+	sessionStore.Options(sessions.Options{
+		Path:     sessionPath,
+		Domain:   sessionDomain,
+		MaxAge:   sessionMaxAge,
+		Secure:   false,
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	// auth // TODO Remake
+	collectionUsers := client.Database(mongoDB).Collection("users")
+	userMongoRepository := repository.NewUserMongoRepository(ctx, collectionUsers)
+	authService := service.NewDefaultAuthService(userMongoRepository)
+	tokenPresenter := presenter.NewTokenPresenter()
+	authHandler = handlers.NewAuthHandler(ctx, authService, tokenPresenter)
 
 	// category
 	collectionCategories := client.Database(mongoDB).Collection("categories")
@@ -90,15 +130,23 @@ func main() {
 	// router.SetTrustedProxies([]string{"192.168.1.2"})
 	// router.UseH2C = true
 
-	// midelleware
-	router.Use(middleware.RequestAbsUrl())
-
 	// routes for version 1
 	apiV1 := router.Group("/v1")
+	apiV1auth := router.Group("/v1")
 
-	placesHandler.MakeHandlers(apiV1)
+	// common midelleware
+	router.Use(middleware.RequestAbsUrl())
+	// session midelleware
+	sessionMidlleware := middleware.Session(sessionName, sessionStore)
+	apiV1.Use(sessionMidlleware)
+	apiV1auth.Use(sessionMidlleware)
+	// auth midelleware
+	apiV1auth.Use(middleware.Auth())
+
+	authHandler.MakeHandlers(apiV1)
+	placesHandler.MakeHandlers(apiV1, apiV1auth)
 	placesHandler.MakeRequestValidation()
-	categoriesHandler.MakeHandlers(apiV1)
+	categoriesHandler.MakeHandlers(apiV1, apiV1auth)
 
 	router.GET("/version", VersionHandler)
 
@@ -106,6 +154,7 @@ func main() {
 	srv := &http.Server{
 		Addr:    ":8080",
 		Handler: router,
+		// TODO
 	}
 	// srv.RegisterOnShutdown()
 
