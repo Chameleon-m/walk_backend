@@ -23,7 +23,7 @@ func NewCategoryModel(id ID, name string, order int8) (*Category, error) {
 func (m *Category) Validate() error {
 
 	if m.Name == "" || m.Order == 0 {
-		return ErrInvalidEntity
+		return ErrInvalidModel
 	}
 	return nil
 }

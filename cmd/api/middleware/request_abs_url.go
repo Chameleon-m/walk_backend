@@ -6,6 +6,7 @@ import (
 
 func RequestAbsUrl() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		defer c.Next()
 		if c.Request.URL.IsAbs() {
 			return
 		}

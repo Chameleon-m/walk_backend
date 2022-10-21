@@ -43,7 +43,7 @@ type PlaceList []*Place
 func (m *Place) Validate() error {
 
 	if m.Name == "" || m.NameSlug == "" {
-		return ErrInvalidEntity
+		return ErrInvalidModel
 	}
 	return nil
 }

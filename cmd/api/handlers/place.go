@@ -256,14 +256,15 @@ func (handler *PlacesHandler) SearchPlacesHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": data})
 }
 
-func (handler *PlacesHandler) MakeHandlers(router *gin.RouterGroup) {
+func (handler *PlacesHandler) MakeHandlers(router *gin.RouterGroup, routerAuth *gin.RouterGroup) {
 
-	router.POST("/places", handler.NewPlaceHandler)
 	router.GET("/places", handler.ListPlacesHandler)
 	router.GET("/places/:id", handler.GetOnePlaceHandler)
-	router.PUT("/places/:id", handler.UpdatePlaceHandler)
-	router.DELETE("/places/:id", handler.DeletePlaceHandler)
 	router.GET("/places/search", handler.SearchPlacesHandler)
+
+	routerAuth.POST("/places", handler.NewPlaceHandler)
+	routerAuth.PUT("/places/:id", handler.UpdatePlaceHandler)
+	routerAuth.DELETE("/places/:id", handler.DeletePlaceHandler)
 }
 
 func (handler *PlacesHandler) MakeRequestValidation() {

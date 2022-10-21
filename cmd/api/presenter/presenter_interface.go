@@ -13,3 +13,7 @@ type CategoryPresenterInteface interface {
 	Make(m *model.Category) *Category
 	MakeList(mList model.CategoryList) []*Category
 }
+
+type TokenPresenterInteface interface {
+	Make(token string) *Token
+}
