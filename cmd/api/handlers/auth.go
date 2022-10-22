@@ -34,12 +34,12 @@ func NewAuthHandler(ctx context.Context, service service.AuthServiceInteface, pr
 // - application/json
 // responses:
 //
-//	'200':
-//	    description: Successful operation
-//	'400':
-//		description: Invalid input
-//	'500':
-//	    description: Invalid credentials
+//  '200':
+//    description: Successful operation
+//  '400':
+//    description: Invalid input
+//  '500':
+//    description: Invalid credentials
 func (handler *AuthHandler) SignUpHandler(c *gin.Context) {
 
 	dto := dto.NewAuthLoginDTO()
@@ -64,12 +64,12 @@ func (handler *AuthHandler) SignUpHandler(c *gin.Context) {
 // - application/json
 // responses:
 //
-//	'200':
-//	    description: Successful operation
-//	'401':
-//	    description: Invalid credentials
-//	'500':
-//	    description: Status Internal Server
+//  '200':
+//    description: Successful operation
+//  '401':
+//    description: Invalid credentials
+//  '500':
+//    description: Status Internal Server
 func (handler *AuthHandler) SignInHandler(c *gin.Context) {
 
 	dto := dto.NewAuthLoginDTO()
@@ -109,10 +109,10 @@ func (handler *AuthHandler) SignInHandler(c *gin.Context) {
 // - application/json
 // responses:
 //
-//	'200':
-//	    description: Successful operation
-//	'401':
-//	    description: Invalid credentials
+//  '200':
+//    description: Successful operation
+//  '401':
+//    description: Invalid credentials
 func (handler *AuthHandler) RefreshHandler(c *gin.Context) {
 
 	session := sessions.Default(c)
@@ -140,8 +140,8 @@ func (handler *AuthHandler) RefreshHandler(c *gin.Context) {
 // ---
 // responses:
 //
-//	'200':
-//	    description: Successful operation
+//  '200':
+//    description: Successful operation
 func (handler *AuthHandler) SignOutHandler(c *gin.Context) {
 	session := sessions.Default(c)
 	session.Clear()

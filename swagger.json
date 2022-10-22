@@ -20,8 +20,100 @@
     "version": "0.0.1"
   },
   "host": "localhost:8080",
-  "basePath": "/v1",
+  "basePath": "/v1/api",
   "paths": {
+    "/auth/login": {
+      "post": {
+        "description": "Login with username and password",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "auth"
+        ],
+        "operationId": "signIn",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "Username",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "Password",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation"
+          },
+          "401": {
+            "description": "Invalid credentials"
+          },
+          "500": {
+            "description": "Status Internal Server"
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "description": "Signing out",
+        "tags": [
+          "auth"
+        ],
+        "operationId": "signOut",
+        "responses": {
+          "200": {
+            "description": "Successful operation"
+          }
+        }
+      }
+    },
+    "/auth/refresh-tokens": {
+      "post": {
+        "description": "Refresh token",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "auth"
+        ],
+        "operationId": "refresh",
+        "responses": {
+          "200": {
+            "description": "Successful operation"
+          },
+          "401": {
+            "description": "Invalid credentials"
+          }
+        }
+      }
+    },
+    "/auth/registration": {
+      "post": {
+        "description": "Registration with username and password",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "auth"
+        ],
+        "operationId": "signUp",
+        "responses": {
+          "200": {
+            "description": "Successful operation"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "500": {
+            "description": "Invalid credentials"
+          }
+        }
+      }
+    },
     "/categories": {
       "get": {
         "description": "Returns list of categories",
@@ -158,7 +250,12 @@
         "tags": [
           "places"
         ],
-        "operationId": "listPlaces"
+        "operationId": "listPlaces",
+        "responses": {
+          "200": {
+            "description": "Successful operation"
+          }
+        }
       },
       "post": {
         "description": "Create a new place",
@@ -192,7 +289,15 @@
             "name": "Tags",
             "in": "query"
           }
-        ]
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful operation"
+          },
+          "400": {
+            "description": "Invalid input"
+          }
+        }
       }
     },
     "/places/search": {
@@ -213,7 +318,12 @@
             "in": "query",
             "required": true
           }
-        ]
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation"
+          }
+        }
       }
     },
     "/places/{id}": {
@@ -234,7 +344,18 @@
             "in": "path",
             "required": true
           }
-        ]
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "404": {
+            "description": "Invalid place ID"
+          }
+        }
       },
       "put": {
         "description": "Update an existing place",
@@ -253,7 +374,18 @@
             "in": "path",
             "required": true
           }
-        ]
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful operation"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "404": {
+            "description": "Invalid place ID"
+          }
+        }
       },
       "delete": {
         "description": "Delete an existing place",
@@ -272,8 +404,26 @@
             "in": "path",
             "required": true
           }
-        ]
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful operation"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "404": {
+            "description": "Invalid place ID"
+          }
+        }
       }
+    }
+  },
+  "securityDefinitions": {
+    "api_key": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header"
     }
   }
 }

@@ -36,8 +36,8 @@ func NewPlacesHandler(ctx context.Context, service service.PlaceServiceInteface,
 // - application/json
 // responses:
 //
-//	'200':
-//	    description: Successful operation
+//  '200':
+//    description: Successful operation
 func (handler *PlacesHandler) ListPlacesHandler(c *gin.Context) {
 
 	placeList, err := handler.service.ListPlaces()
@@ -63,10 +63,10 @@ func (handler *PlacesHandler) ListPlacesHandler(c *gin.Context) {
 // - application/json
 // responses:
 //
-//	'201':
-//	    description: Successful operation
-//	'400':
-//	    description: Invalid input
+//  '201':
+//    description: Successful operation
+//  '400':
+//    description: Invalid input
 func (handler *PlacesHandler) NewPlaceHandler(c *gin.Context) {
 
 	dto := dto.NewPlaceDTO()
@@ -100,12 +100,12 @@ func (handler *PlacesHandler) NewPlaceHandler(c *gin.Context) {
 // - application/json
 // responses:
 //
-//	'204':
-//	    description: Successful operation
-//	'400':
-//	    description: Invalid input
-//	'404':
-//	    description: Invalid place ID
+//  '204':
+//    description: Successful operation
+//  '400':
+//    description: Invalid input
+//  '404':
+//    description: Invalid place ID
 func (handler *PlacesHandler) UpdatePlaceHandler(c *gin.Context) {
 
 	dto := dto.NewPlaceDTO()
@@ -144,12 +144,12 @@ func (handler *PlacesHandler) UpdatePlaceHandler(c *gin.Context) {
 //
 // responses:
 //
-//	'204':
-//	    description: Successful operation
-//	'400':
-//	    description: Invalid input
-//	'404':
-//	    description: Invalid place ID
+//  '204':
+//    description: Successful operation
+//  '400':
+//    description: Invalid input
+//  '404':
+//    description: Invalid place ID
 func (handler *PlacesHandler) DeletePlaceHandler(c *gin.Context) {
 	id := c.Param("id")
 	placeID, err := model.StringToID(id)
@@ -184,12 +184,12 @@ func (handler *PlacesHandler) DeletePlaceHandler(c *gin.Context) {
 //
 // responses:
 //
-//	'200':
-//	    description: Successful operation
-//	'400':
-//	    description: Invalid input
-//	'404':
-//	    description: Invalid place ID
+//  '200':
+//    description: Successful operation
+//  '400':
+//    description: Invalid input
+//  '404':
+//    description: Invalid place ID
 func (handler *PlacesHandler) GetOnePlaceHandler(c *gin.Context) {
 	id := c.Param("id")
 	placeID, err := model.StringToID(id)
@@ -236,8 +236,8 @@ func (handler *PlacesHandler) GetOnePlaceHandler(c *gin.Context) {
 //
 // responses:
 //
-//	'200':
-//	    description: Successful operation
+//  '200':
+//    description: Successful operation
 func (handler *PlacesHandler) SearchPlacesHandler(c *gin.Context) {
 	search := c.Query("q")
 	placeList, err := handler.service.Search(search)

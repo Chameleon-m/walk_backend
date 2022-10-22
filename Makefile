@@ -31,6 +31,6 @@ migrate-create-json:
 swagger-generate:
 	swagger generate spec -o ./swagger.json
 swagger-serve:
-	swagger serve ./swagger.json
+	swagger serve -p 8081 ./swagger.json
 swagger-serve-f:
-	swagger serve -F swagger ./swagger.json
+	swagger serve -p 8081 -F swagger ./swagger.json
