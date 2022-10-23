@@ -21,6 +21,13 @@ export MONGO_REPLICA_SET_NAME=rs0
 # GIN
 export PORT=8080
 export GIN_MODE=debug
+
+# SESSION
+export SESSION_SECRET=59ce2f5dc5a3f211c6f9fffb19d7cc18c098ac19645df22585c20d19477f14ae
+export SESSION_NAME=session_name
+export SESSION_PATH=/v1/auth
+export SESSION_DOMAIN=.localhost
+export SESSION_MAX_AGE=3600
 ```
 Or
 ```
@@ -59,6 +66,14 @@ Once the replica set is up, you will need to update hostnames in local /etc/host
 ```
 **NOTE**: In windows, the hosts file is located at C:\Windows\System32\drivers\etc\hosts
 
+# NGINX
+Generate keys
+```
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./.docker/nginx/keys/cert.key -out ./.docker/nginx/keys/cert.crt
+```
+```
+openssl dhparam -out ./.docker/nginx/keys/dhparam.pem 4096
+```
 
 # SWAGGER
 
