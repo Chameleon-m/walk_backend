@@ -2,23 +2,23 @@
 //
 // This is a places API.
 //
-//    Schemes: http
-//    Host: localhost:8080
-//    BasePath: /v1/api
-//    Version: 0.0.1
-//    Contact: Dmitry Korolev <korolev.d.l@yandex.ru> https://github.com/Chameleon-m
+//	Schemes: http
+//	Host: localhost:8080
+//	BasePath: /v1/api
+//	Version: 0.0.1
+//	Contact: Dmitry Korolev <korolev.d.l@yandex.ru> https://github.com/Chameleon-m
 //
-//    SecurityDefinitions:
-//        api_key:
-//          type: apiKey
-//          name: Authorization
-//          in: header
+//	SecurityDefinitions:
+//	    api_key:
+//	      type: apiKey
+//	      name: Authorization
+//	      in: header
 //
-//    Consumes:
-//      - application/json
+//	Consumes:
+//	  - application/json
 //
-//    Produces:
-//      - application/json
+//	Produces:
+//	  - application/json
 //
 // swagger:meta
 package main
@@ -79,6 +79,10 @@ func main() {
 
 	mongoDB := os.Getenv("MONGO_INITDB_DATABASE")
 
+	siteSchema := os.Getenv("SITE_SCHEMA")
+	siteHost := os.Getenv("SITE_HOST")
+	sitePort := os.Getenv("SITE_PORT")
+
 	// session
 	sessionSecret := os.Getenv("SESSION_SECRET")
 	sessionName := os.Getenv("SESSION_NAME")
@@ -130,12 +134,14 @@ func main() {
 	// router.SetTrustedProxies([]string{"192.168.1.2"})
 	// router.UseH2C = true
 
+	// common midelleware
+	router.Use(middleware.Cors(siteSchema, siteHost, sitePort))
+	router.Use(middleware.RequestAbsUrl())
+
 	// routes for version 1
 	apiV1 := router.Group("/v1")
-	apiV1auth := router.Group("/v1")
+	apiV1auth := apiV1.Group("")
 
-	// common midelleware
-	router.Use(middleware.RequestAbsUrl())
 	// session midelleware
 	sessionMidlleware := middleware.Session(sessionName, sessionStore)
 	apiV1.Use(sessionMidlleware)
