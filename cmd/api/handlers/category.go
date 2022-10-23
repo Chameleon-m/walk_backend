@@ -34,8 +34,8 @@ func NewCategoriesHandler(ctx context.Context, service service.CategoryServiceIn
 // - application/json
 // responses:
 //
-//	'200':
-//	    description: Successful operation
+//  '200':
+//    description: Successful operation
 func (handler *CategoriesHandler) ListCategoriesHandler(c *gin.Context) {
 
 	categoryList, err := handler.service.ListCategories()
@@ -55,10 +55,10 @@ func (handler *CategoriesHandler) ListCategoriesHandler(c *gin.Context) {
 // - application/json
 // responses:
 //
-//	'201':
-//	    description: Successful operation
-//	'400':
-//	    description: Invalid input
+//  '201':
+//    description: Successful operation
+//  '400':
+//    description: Invalid input
 func (handler *CategoriesHandler) NewCategoryHandler(c *gin.Context) {
 
 	dto := dto.NewCategoryDTO()
@@ -92,12 +92,12 @@ func (handler *CategoriesHandler) NewCategoryHandler(c *gin.Context) {
 // - application/json
 // responses:
 //
-//	'204':
-//	    description: Successful operation
-//	'400':
-//	    description: Invalid input
-//	'404':
-//	    description: Invalid category ID
+//  '204':
+//    description: Successful operation
+//  '400':
+//    description: Invalid input
+//  '404':
+//    description: Invalid category ID
 func (handler *CategoriesHandler) UpdateCategryHandler(c *gin.Context) {
 
 	dto := dto.NewCategoryDTO()
@@ -136,12 +136,12 @@ func (handler *CategoriesHandler) UpdateCategryHandler(c *gin.Context) {
 //
 // responses:
 //
-//	'204':
-//	    description: Successful operation
-//	'400':
-//	    description: Invalid input
-//	'404':
-//	    description: Invalid category ID
+//  '204':
+//    description: Successful operation
+//  '400':
+//    description: Invalid input
+//  '404':
+//    description: Invalid category ID
 func (handler *CategoriesHandler) DeleteCategoryHandler(c *gin.Context) {
 	id := c.Param("id")
 	categoryID, err := model.StringToID(id)
@@ -176,12 +176,12 @@ func (handler *CategoriesHandler) DeleteCategoryHandler(c *gin.Context) {
 //
 // responses:
 //
-//	'200':
-//	    description: Successful operation
-//	'400':
-//	    description: Invalid input
-//	'404':
-//	    description: Invalid category ID
+//  '200':
+//    description: Successful operation
+//  '400':
+//    description: Invalid input
+//  '404':
+//    description: Invalid category ID
 func (handler *CategoriesHandler) GetOneCategoryHandler(c *gin.Context) {
 	id := c.Param("id")
 	categoryID, err := model.StringToID(id)

@@ -2,23 +2,23 @@
 //
 // This is a places API.
 //
-//		Schemes: http
-//	    Host: localhost:8080
-//		BasePath: /v1
-//		Version: 0.0.1
-//		Contact: Dmitry Korolev <korolev.d.l@yandex.ru> https://github.com/Chameleon-m
+//    Schemes: http
+//    Host: localhost:8080
+//    BasePath: /v1/api
+//    Version: 0.0.1
+//    Contact: Dmitry Korolev <korolev.d.l@yandex.ru> https://github.com/Chameleon-m
 //
-//		SecurityDefinitions:
-//			api_key:
-//				type: apiKey
-//				name: Authorization
-//				in: header
+//    SecurityDefinitions:
+//        api_key:
+//          type: apiKey
+//          name: Authorization
+//          in: header
 //
-//		Consumes:
-//		- application/json
+//    Consumes:
+//      - application/json
 //
-//		Produces:
-//		- application/json
+//    Produces:
+//      - application/json
 //
 // swagger:meta
 package main
@@ -96,7 +96,7 @@ func main() {
 		Path:     sessionPath,
 		Domain:   sessionDomain,
 		MaxAge:   sessionMaxAge,
-		Secure:   false,
+		Secure:   true,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 	})
