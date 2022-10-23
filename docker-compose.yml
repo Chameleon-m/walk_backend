@@ -2,6 +2,25 @@ version: '3.9'
 
 services:
 
+  nginx:
+    container_name: nginx
+    image: 'nginx:latest'
+    ports:
+      - 80:80
+      - 443:443
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./.docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./.docker/nginx/ssl-params.conf:/etc/nginx/ssl-params.conf:ro
+      - ./.docker/nginx/conf.d/:/etc/nginx/conf.d/:ro
+      - ./.docker/nginx/keys/cert.crt:/etc/ssl/certs/nginx-selfsigned.crt
+      - ./.docker/nginx/keys/cert.key:/etc/ssl/private/nginx-selfsigned.key
+      - ./.docker/nginx/keys/dhparam.pem:/etc/nginx/dhparam.pem
+    # command: update-ca-certificates --fresh
+    networks:
+      nginx_net:
+
   # setup MongoDB cluster for production
   mongo-replica-setup:
     container_name: mongo-setup
@@ -67,3 +86,4 @@ volumes:
 networks:
   netApplication:
     name: netApplication
+  nginx_net:

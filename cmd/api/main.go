@@ -96,7 +96,7 @@ func main() {
 		Path:     sessionPath,
 		Domain:   sessionDomain,
 		MaxAge:   sessionMaxAge,
-		Secure:   false,
+		Secure:   true,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 	})
