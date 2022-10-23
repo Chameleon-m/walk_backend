@@ -18,6 +18,11 @@ export MONGO_INITDB_USERNAME=user
 export MONGO_INITDB_PASSWORD=userpassword
 export MONGO_REPLICA_SET_NAME=rs0
 
+# COMMON
+export SITE_SCHEMA=https
+export SITE_HOST=localhost
+export SITE_PORT=443
+
 # GIN
 export PORT=8080
 export GIN_MODE=debug

@@ -13,13 +13,14 @@ func Auth() gin.HandlerFunc {
 		session := sessions.Default(c)
 		sessionToken := session.Get("token")
 		if sessionToken == nil {
-			c.JSON(http.StatusForbidden, gin.H{"message": "Not logged"})
-			c.Abort()
+			c.AbortWithStatus(http.StatusForbidden)
+			return
 		}
 
 		tokenValue := c.GetHeader("Authorization")
 		if tokenValue != sessionToken {
 			c.AbortWithStatus(http.StatusUnauthorized)
+			return
 		}
 		c.Next()
 	}
