@@ -50,6 +50,9 @@ func (handler *PlacesHandler) ListPlacesHandler(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	} else if len(categoryList) == 0 {
+		c.JSON(http.StatusFailedDependency, gin.H{"error": "Categories not found"})
+		return
 	}
 
 	data := handler.presenter.MakeList(placeList, categoryList)
@@ -249,6 +252,9 @@ func (handler *PlacesHandler) SearchPlacesHandler(c *gin.Context) {
 	categoryList, err := handler.service.ListCategories()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	} else if len(categoryList) == 0 {
+		c.JSON(http.StatusFailedDependency, gin.H{"error": "Categories not found"})
 		return
 	}
 
