@@ -17,10 +17,25 @@ services:
       - ./.docker/nginx/keys/cert.crt:/etc/ssl/certs/nginx-selfsigned.crt
       - ./.docker/nginx/keys/cert.key:/etc/ssl/private/nginx-selfsigned.key
       - ./.docker/nginx/keys/dhparam.pem:/etc/nginx/dhparam.pem
-    # command: update-ca-certificates --fresh
     networks:
       nginx_net:
 
+  rabbitmq:
+    container_name: rabbitmq
+    image: 'rabbitmq:3-management'
+    ports:
+     - 15672:15672
+     - 5672:5672
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-guest}
+      RABBITMQ_DEFAULT_PASSWORD: ${RABBITMQ_DEFAULT_PASS:-guest}
+    networks:
+      - netApplication
+    volumes:
+      - ./.docker/rabbitmq/conf.d/:/etc/rabbitmq/conf.d/
+      - ./.docker/rabbitmq/data/:/var/lib/rabbitmq/
+
+  
   # setup MongoDB cluster for production
   mongo-replica-setup:
     container_name: mongo-setup

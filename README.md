@@ -33,6 +33,10 @@ export SESSION_NAME=session_name
 export SESSION_PATH=/v1/auth
 export SESSION_DOMAIN=.localhost
 export SESSION_MAX_AGE=3600
+
+# RABBITMQ
+export RABBITMQ_DEFAULT_USER=guest
+export RABBITMQ_DEFAULT_PASSWORD=guest
 ```
 Or
 ```
@@ -79,6 +83,8 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./.docker/nginx/keys
 ```
 openssl dhparam -out ./.docker/nginx/keys/dhparam.pem 4096
 ```
+
+# RABBITMQ
 
 # SWAGGER
 
