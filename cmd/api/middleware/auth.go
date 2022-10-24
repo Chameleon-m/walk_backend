@@ -12,15 +12,11 @@ func Auth() gin.HandlerFunc {
 
 		session := sessions.Default(c)
 		sessionToken := session.Get("token")
+		tokenValue := c.GetHeader("Authorization")
 		if sessionToken == nil {
 			c.AbortWithStatus(http.StatusForbidden)
-			return
-		}
-
-		tokenValue := c.GetHeader("Authorization")
-		if tokenValue != sessionToken {
+		} else if tokenValue != sessionToken {
 			c.AbortWithStatus(http.StatusUnauthorized)
-			return
 		}
 		c.Next()
 	}
