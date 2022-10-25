@@ -45,8 +45,6 @@ services:
     volumes:
       - ./.docker/mongodb/scripts/mongosetup.sh:/scripts/mongosetup.sh
     entrypoint: [ "bash", "/scripts/mongosetup.sh" ]
-    env_file:
-      - .env
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
@@ -82,8 +80,6 @@ services:
       test: echo 'rs.status().ok' | mongosh admin -u $${MONGO_INITDB_ROOT_USERNAME} -p $${MONGO_INITDB_ROOT_PASSWORD} --quiet | grep 1
       interval: 30s
       start_period: 60s
-    env_file:
-      - .env
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
