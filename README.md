@@ -35,12 +35,10 @@ export SESSION_DOMAIN=.localhost
 export SESSION_MAX_AGE=3600
 
 # RABBITMQ
+export RABBITMQ_URI="amqp://guest:guset@localhost:5672/"
 export RABBITMQ_DEFAULT_USER=guest
 export RABBITMQ_DEFAULT_PASSWORD=guest
-```
-Or
-```
-cp .env.example .env
+export RABBITMQ_QUEUE_PLACE_REINDEX=place_reindex
 ```
 # DB
 

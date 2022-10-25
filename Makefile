@@ -4,8 +4,13 @@ else
     migrateCommand := migrate -source file://migrations -database "${MONGO_URI_TEST}" -verbose
 endif
 
+GOFLAGS := CGO_ENABLED=0 GOOS=linux GOARCH=amd64
+
 api:
-	MONGO_URI="${MONGO_URI}" MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE} PORT=${PORT} GIN_MODE=${GIN_MODE} CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go run cmd/api/main.go
+	${GOFLAGS} go run cmd/api/main.go
+
+consumers:
+	${GOFLAGS} go run cmd/consumers/place_reindex.go
 
 generate-mocks:
 	mockgen -source repository/place_repository_interface.go -destination repository/mock/place_repository_mock.go -package repository
