@@ -38,7 +38,9 @@ export SESSION_MAX_AGE=3600
 export RABBITMQ_URI="amqp://guest:guset@localhost:5672/"
 export RABBITMQ_DEFAULT_USER=guest
 export RABBITMQ_DEFAULT_PASSWORD=guest
-export RABBITMQ_QUEUE_PLACE_REINDEX=place_reindex
+export RABBITMQ_EXCHANGE_REINDEX=reindex_exchange
+export RABBITMQ_ROUTING_PLACE_KEY=place_routing_key
+export RABBITMQ_QUEUE_PLACE_REINDEX=place_reindex_queue
 ```
 # DB
 

@@ -12,12 +12,18 @@ import (
 type DefaultPlaceService struct {
 	placeRepo    repository.PlaceRepositoryInterface
 	categoryRepo repository.CategoryRepositoryInterface
+	placeQueue   repository.PlaceQueueRepositoryInterface
 }
 
-func NewDefaultPlaceService(placeRepo repository.PlaceRepositoryInterface, categoryRepo repository.CategoryRepositoryInterface) *DefaultPlaceService {
+func NewDefaultPlaceService(
+	placeRepo repository.PlaceRepositoryInterface,
+	categoryRepo repository.CategoryRepositoryInterface,
+	placeQueue repository.PlaceQueueRepositoryInterface,
+) *DefaultPlaceService {
 	return &DefaultPlaceService{
 		placeRepo:    placeRepo,
 		categoryRepo: categoryRepo,
+		placeQueue:   placeQueue,
 	}
 }
 
@@ -33,7 +39,16 @@ func (s *DefaultPlaceService) Create(d *dto.Place) (model.ID, error) {
 	}
 	m.CreatedAt = time.Now()
 
-	return s.placeRepo.Create(m)
+	id, err := s.placeRepo.Create(m)
+	if err != nil {
+		return model.NilID, err
+	}
+
+	if err := s.placeQueue.PublishReIndex(m.ID); err != nil {
+		return model.NilID, err
+	}
+
+	return id, nil
 }
 
 func (s *DefaultPlaceService) Update(d *dto.Place) error {
@@ -44,11 +59,28 @@ func (s *DefaultPlaceService) Update(d *dto.Place) error {
 	}
 	m.UpdatedAt = time.Now()
 
-	return s.placeRepo.Update(m)
+	if err := s.placeRepo.Update(m); err != nil {
+		return err
+	}
+
+	if err := s.placeQueue.PublishReIndex(m.ID); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *DefaultPlaceService) Delete(id model.ID) error {
-	return s.placeRepo.Delete(id)
+
+	if err := s.placeRepo.Delete(id); err != nil {
+		return err
+	}
+
+	if err := s.placeQueue.PublishReIndex(id); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *DefaultPlaceService) Find(id model.ID) (*model.Place, error) {

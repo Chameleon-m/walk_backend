@@ -10,6 +10,7 @@ require (
 	github.com/gofrs/uuid v4.3.0+incompatible
 	github.com/golang/mock v1.6.0
 	github.com/gosimple/slug v1.13.1
+	github.com/rabbitmq/amqp091-go v1.5.0
 	go.mongodb.org/mongo-driver v1.10.2
 	golang.org/x/crypto v0.1.0
 	golang.org/x/net v0.1.0

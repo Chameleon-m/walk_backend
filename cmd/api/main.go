@@ -43,6 +43,7 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/mongo/mongodriver"
 	"github.com/gin-gonic/gin"
+	amqp "github.com/rabbitmq/amqp091-go"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -61,24 +62,40 @@ func main() {
 	ctxSignal, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
+	var err error
+
 	// DB
 	ctx := context.Background()
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(os.Getenv("MONGO_URI")))
-	if err != nil {
-		log.Fatal(err)
-	}
+	failOnError(err, "MongoDB")
 	defer func() {
-		if err = client.Disconnect(ctx); err != nil {
-			log.Fatal(err)
-		}
+		failOnError(client.Disconnect(ctx), "MongoDB")
 	}()
-	if err = client.Ping(context.TODO(), readpref.Primary()); err != nil {
-		log.Fatal(err)
-	}
+
+	failOnError(client.Ping(context.TODO(), readpref.Primary()), "MongoDB | Ping")
 	log.Println("Connected to MongoDB")
 
 	mongoDB := os.Getenv("MONGO_INITDB_DATABASE")
 
+	// RabbitMQ
+	amqpConnection, err := amqp.Dial(os.Getenv("RABBITMQ_URI"))
+	failOnError(err, "RabbitMQ")
+	defer func() {
+		failOnError(amqpConnection.Close(), "RabbitMQ | Close")
+	}()
+	log.Println("Connected to RabbitMQ")
+
+	channelAmqp, err := amqpConnection.Channel()
+	failOnError(err, "RabbitMQ | Channel")
+
+	err = channelAmqp.ExchangeDeclare(os.Getenv("RABBITMQ_EXCHANGE_REINDEX"), amqp.ExchangeDirect, true, false, false, false, nil)
+	failOnError(err, "RabbitMQ | Failed to declare a exchange")
+	placeQueue, err := channelAmqp.QueueDeclare(os.Getenv("RABBITMQ_QUEUE_PLACE_REINDEX"), true, false, false, false, nil)
+	failOnError(err, "RabbitMQ | Failed to declare a queue")
+	err = channelAmqp.QueueBind(placeQueue.Name, os.Getenv("RABBITMQ_ROUTING_PLACE_KEY"), os.Getenv("RABBITMQ_EXCHANGE_REINDEX"), false, nil)
+	failOnError(err, "RabbitMQ | Failed to bind a queue")
+
+	// SITE
 	siteSchema := os.Getenv("SITE_SCHEMA")
 	siteHost := os.Getenv("SITE_HOST")
 	sitePort := os.Getenv("SITE_PORT")
@@ -89,9 +106,7 @@ func main() {
 	sessionPath := os.Getenv("SESSION_PATH")
 	sessionDomain := os.Getenv("SESSION_DOMAIN")
 	sessionMaxAge, err := strconv.Atoi(os.Getenv("SESSION_MAX_AGE"))
-	if err != nil {
-		log.Fatal(err)
-	}
+	failOnError(err, "SESSION | SESSION_MAX_AGE")
 
 	// session store // TODO Remake
 	colectionSessions := client.Database(mongoDB).Collection("sessions")
@@ -122,7 +137,8 @@ func main() {
 	// place
 	collectionPlaces := client.Database(mongoDB).Collection("places")
 	placeMongoRepository := repository.NewPlaceMongoRepository(ctx, collectionPlaces)
-	placeService := service.NewDefaultPlaceService(placeMongoRepository, categoryMongoRepository)
+	placeQueueRabbitRepository := repository.NewPlaceQueueRabbitRepository(channelAmqp)
+	placeService := service.NewDefaultPlaceService(placeMongoRepository, categoryMongoRepository, placeQueueRabbitRepository)
 	placePresenter := presenter.NewPlacePresenter()
 	placesHandler = handlers.NewPlacesHandler(ctx, placeService, placePresenter)
 
@@ -181,13 +197,17 @@ func main() {
 	// The context is used to inform the server it has 5 seconds to finish the request it is currently handling
 	ctxSignal, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	if err := srv.Shutdown(ctxSignal); err != nil {
-		log.Fatal("Server forced to shutdown: ", err)
-	}
+	failOnError(srv.Shutdown(ctxSignal), "Server forced to shutdown")
 
 	log.Println("Server exiting")
 }
 
 func VersionHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"version": os.Getenv("API_VERSION")})
+}
+
+func failOnError(err error, msg string) {
+	if err != nil {
+		log.Fatalf("%s: %s", msg, err)
+	}
 }
