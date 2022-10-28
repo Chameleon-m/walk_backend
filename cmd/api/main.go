@@ -81,12 +81,36 @@ func main() {
 	amqpConnection, err := amqp.Dial(os.Getenv("RABBITMQ_URI"))
 	failOnError(err, "RabbitMQ")
 	defer func() {
-		failOnError(amqpConnection.Close(), "RabbitMQ | Close")
+		if !amqpConnection.IsClosed() {
+			failOnError(amqpConnection.Close(), "RabbitMQ | Close")
+		}
 	}()
 	log.Println("Connected to RabbitMQ")
 
 	channelAmqp, err := amqpConnection.Channel()
 	failOnError(err, "RabbitMQ | Channel")
+	defer func() {
+		if !channelAmqp.IsClosed() {
+			failOnError(channelAmqp.Close(), "RabbitMQ | Chanel close error")
+		}
+	}()
+
+	go func() {
+		for {
+			select {
+			case err := <-amqpConnection.NotifyClose(make(chan *amqp.Error)):
+				if err != nil {
+					log.Printf("RabbitMQ | Connection closing: %s", err)
+					stop()
+				}
+			case err := <-channelAmqp.NotifyClose(make(chan *amqp.Error)):
+				if err != nil {
+					log.Printf("RabbitMQ | Channel closing: %s", err)
+					stop()
+				}
+			}
+		}
+	}()
 
 	err = channelAmqp.ExchangeDeclare(os.Getenv("RABBITMQ_EXCHANGE_REINDEX"), amqp.ExchangeDirect, true, false, false, false, nil)
 	failOnError(err, "RabbitMQ | Failed to declare a exchange")
@@ -183,7 +207,7 @@ func main() {
 	// Initializing the server in a goroutine so that it won't block the graceful shutdown handling below
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("listen: %s\n", err)
+			failOnError(err, "listen")
 		}
 	}()
 

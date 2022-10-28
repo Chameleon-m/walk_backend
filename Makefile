@@ -10,7 +10,7 @@ api:
 	${GOFLAGS} go run cmd/api/main.go
 
 consumers:
-	${GOFLAGS} go run cmd/consumers/place_reindex.go
+	${GOFLAGS} go run cmd/consumers/place_reindex_rabbitmq.go
 
 generate-mocks:
 	mockgen -source repository/place_repository_interface.go -destination repository/mock/place_repository_mock.go -package repository

@@ -4,6 +4,8 @@ import (
 	"context"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"walk_backend/model"
 	"walk_backend/repository"
@@ -22,6 +24,9 @@ func init() {
 }
 
 func main() {
+
+	ctxSignal, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
 	// DB
 	ctx := context.Background()
@@ -47,8 +52,10 @@ func main() {
 		log.Fatal(err)
 	}
 	defer func() {
-		if err = amqpConnection.Close(); err != nil {
-			log.Fatal(err)
+		if !amqpConnection.IsClosed() {
+			if err = amqpConnection.Close(); err != nil {
+				log.Fatal(err)
+			}
 		}
 	}()
 	log.Println("Connected to RabbitMQ")
@@ -58,8 +65,27 @@ func main() {
 		log.Fatal(err)
 	}
 	defer func() {
-		if err = channelAmqp.Close(); err != nil {
-			log.Fatal(err)
+		if !channelAmqp.IsClosed() {
+			if err = channelAmqp.Close(); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}()
+
+	go func() {
+		for {
+			select {
+			case err := <-amqpConnection.NotifyClose(make(chan *amqp.Error)):
+				if err != nil {
+					log.Printf("RabbitMQ | Connection closing: %s", err)
+					stop()
+				}
+			case err := <-channelAmqp.NotifyClose(make(chan *amqp.Error)):
+				if err != nil {
+					log.Printf("RabbitMQ | Channel closing: %s", err)
+					stop()
+				}
+			}
 		}
 	}()
 
@@ -73,17 +99,14 @@ func main() {
 	placeQueueRabbitRepository := repository.NewPlaceQueueRabbitRepository(channelAmqp)
 	placeService := service.NewDefaultPlaceService(placeMongoRepository, categoryMongoRepository, placeQueueRabbitRepository)
 
-	var forever chan struct{}
-	// TODO channelAmqp.Qos(10 , 0, false) // autoAck
-	msgs, err := channelAmqp.Consume(
-		os.Getenv("RABBITMQ_QUEUE_PLACE_REINDEX"),
-		"",
-		false,
-		false,
-		false,
-		false,
-		nil,
-	)
+	err = channelAmqp.Qos(1, 0, false)
+	if err != nil {
+		log.Fatal(err)
+	}
+	msgs, err := channelAmqp.Consume(os.Getenv("RABBITMQ_QUEUE_PLACE_REINDEX"), "", false, false, false, false, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	go func() {
 		for delivery := range msgs {
@@ -120,5 +143,7 @@ func main() {
 	}()
 
 	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
-	<-forever
+	<-ctxSignal.Done()
+	stop()
+	log.Println("Consumer exiting")
 }
