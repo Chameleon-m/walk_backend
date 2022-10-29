@@ -34,11 +34,11 @@ import (
 	"syscall"
 	"time"
 
-	"walk_backend/cmd/api/handlers"
-	"walk_backend/cmd/api/middleware"
-	"walk_backend/cmd/api/presenter"
-	"walk_backend/repository"
-	"walk_backend/service"
+	"walk_backend/internal/app/api/handlers"
+	"walk_backend/internal/app/api/middleware"
+	"walk_backend/internal/app/api/presenter"
+	"walk_backend/internal/app/repository"
+	"walk_backend/internal/app/service"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/mongo/mongodriver"

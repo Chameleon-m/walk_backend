@@ -7,9 +7,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"walk_backend/model"
-	"walk_backend/repository"
-	"walk_backend/service"
+	"walk_backend/internal/app/model"
+	"walk_backend/internal/app/repository"
+	"walk_backend/internal/app/service"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 	"go.mongodb.org/mongo-driver/mongo"
