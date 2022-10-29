@@ -1,0 +1,100 @@
+version: '3.9'
+
+services:
+
+  nginx:
+    container_name: nginx
+    image: 'nginx:latest'
+    ports:
+      - 80:80
+      - 443:443
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/ssl-params.conf:/etc/nginx/ssl-params.conf:ro
+      - ./docker/nginx/conf.d/:/etc/nginx/conf.d/:ro
+      - ./docker/nginx/keys/cert.crt:/etc/ssl/certs/nginx-selfsigned.crt
+      - ./docker/nginx/keys/cert.key:/etc/ssl/private/nginx-selfsigned.key
+      - ./docker/nginx/keys/dhparam.pem:/etc/nginx/dhparam.pem
+    networks:
+      nginx_net:
+
+  rabbitmq:
+    container_name: rabbitmq
+    image: 'rabbitmq:3-management'
+    ports:
+     - 15672:15672
+     - 5672:5672
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-guest}
+      RABBITMQ_DEFAULT_PASSWORD: ${RABBITMQ_DEFAULT_PASS:-guest}
+    networks:
+      - netApplication
+    volumes:
+      - ./docker/rabbitmq/conf.d/:/etc/rabbitmq/conf.d/
+      - ./docker/rabbitmq/data/:/var/lib/rabbitmq/
+
+  
+  # setup MongoDB cluster for production
+  mongo-replica-setup:
+    container_name: mongo-setup
+    image: 'mongo:latest'
+    networks:
+      - netApplication
+    volumes:
+      - ./docker/mongodb/scripts/mongosetup.sh:/scripts/mongosetup.sh
+    entrypoint: [ "bash", "/scripts/mongosetup.sh" ]
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGO_REPLICA_SET_NAME: ${MONGO_REPLICA_SET_NAME}
+    depends_on:
+      - mongo1
+
+  mongo1:
+    container_name: 'mongo1'
+    image: 'mongo:latest'
+    command:
+      [
+        "-f",
+        "/etc/mongod.conf",
+        "--keyFile",
+        "/auth/file.key",
+        "--replSet",
+        "${MONGO_REPLICA_SET_NAME}",
+        "--bind_ip_all"
+      ]
+    ports:
+      - 27017:27017
+    networks:
+      - netApplication
+    volumes:
+      - mongoData1:/data/db
+      - mongoLog1:/var/log/mongodb
+      - mongoConfig1:/data/configdb
+      - ./docker/mongodb/mongod.conf:/etc/mongod.conf
+      - ./docker/mongodb/file.key:/auth/file.key
+      - ./docker/mongodb/docker-entrypoint-initdb.d/:/docker-entrypoint-initdb.d/
+    healthcheck:
+      test: echo 'rs.status().ok' | mongosh admin -u $${MONGO_INITDB_ROOT_USERNAME} -p $${MONGO_INITDB_ROOT_PASSWORD} --quiet | grep 1
+      interval: 30s
+      start_period: 60s
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
+      MONGO_INITDB_USERNAME: ${MONGO_INITDB_USERNAME}
+      MONGO_INITDB_PASSWORD: ${MONGO_INITDB_PASSWORD}
+      MONGO_REPLICA_SET_NAME: ${MONGO_REPLICA_SET_NAME}
+
+volumes:
+  mongoData1:
+  mongoLog1:
+  mongoConfig1:
+
+
+networks:
+  netApplication:
+    name: netApplication
+  nginx_net:

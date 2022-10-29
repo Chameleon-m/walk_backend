@@ -13,10 +13,10 @@ consumers:
 	${GOFLAGS} go run cmd/consumers/place_reindex_rabbitmq.go
 
 generate-mocks:
-	mockgen -source repository/place_repository_interface.go -destination repository/mock/place_repository_mock.go -package repository
-	mockgen -source repository/category_repository_interface.go -destination repository/mock/category_repository_mock.go -package repository
-	mockgen -source service/place_service_interface.go -destination service/mock/place_service_mock.go -package service
-	mockgen -source service/category_service_interface.go -destination service/mock/category_service_mock.go -package service
+	mockgen -source internal/app/repository/place_repository_interface.go -destination internal/app/repository/mock/place_repository_mock.go -package repository
+	mockgen -source internal/app/repository/category_repository_interface.go -destination internal/app/repository/mock/category_repository_mock.go -package repository
+	mockgen -source internal/app/service/place_service_interface.go -destination internal/app/service/mock/place_service_mock.go -package service
+	mockgen -source internal/app/service/category_service_interface.go -destination internal/app/service/mock/category_service_mock.go -package service
 
 migrate-up:
 	$(migrateCommand) up $(if $n,$n,)
