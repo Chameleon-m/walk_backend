@@ -34,8 +34,8 @@ migrate-create-json:
 	$(migrateCommand) create -ext json -dir migrations $(name)
 
 swagger-generate:
-	swagger generate spec -o ./swagger.json
+	swagger generate spec -o ./api/swagger.json
 swagger-serve:
-	swagger serve -p 8081 ./swagger.json
+	swagger serve -p 8081 ./api/swagger.json
 swagger-serve-f:
-	swagger serve -p 8081 -F swagger ./swagger.json
+	swagger serve -p 8081 -F swagger ./api/swagger.json
