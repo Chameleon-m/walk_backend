@@ -18,6 +18,8 @@ type PlaceMongoRepository struct {
 	ctx        context.Context
 }
 
+var _ PlaceRepositoryInterface = (*PlaceMongoRepository)(nil)
+
 func NewPlaceMongoRepository(ctx context.Context, collection *mongo.Collection) *PlaceMongoRepository {
 	return &PlaceMongoRepository{
 		collection: collection,
@@ -68,21 +70,6 @@ func (r *PlaceMongoRepository) FindAll() (model.PlaceList, error) {
 	return mList, nil
 }
 
-// FindBy
-func (r *PlaceMongoRepository) FindBy(criteria model.Criteria, orderBy []string, limit int64, offset int64) (model.PlaceList, error) {
-	panic("need implement")
-}
-
-// FindOneBy
-func (r *PlaceMongoRepository) FindOneBy(criteria model.Criteria) (*model.Place, error) {
-	panic("need implement")
-}
-
-// Count
-func (r *PlaceMongoRepository) Count(criteria model.Criteria) (int, error) {
-	panic("need implement")
-}
-
 // Create
 func (r *PlaceMongoRepository) Create(place *model.Place) (model.ID, error) {
 
@@ -125,8 +112,7 @@ func (r *PlaceMongoRepository) Update(place *model.Place) error {
 }
 
 // Delete
-// TODO Set DeletedAt and status deleted
-func (r *PlaceMongoRepository) Delete(id model.ID) error {
+func (r *PlaceMongoRepository) Delete(id model.ID) error { 	
 	deleteResult, err := r.collection.DeleteOne(r.ctx, bson.M{
 		"_id": id,
 	})

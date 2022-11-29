@@ -15,6 +15,8 @@ type DefaultPlaceService struct {
 	placeQueue   repository.PlaceQueueRepositoryInterface
 }
 
+var _ PlaceServiceInteface = (*DefaultPlaceService)(nil)
+
 func NewDefaultPlaceService(
 	placeRepo repository.PlaceRepositoryInterface,
 	categoryRepo repository.CategoryRepositoryInterface,

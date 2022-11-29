@@ -17,6 +17,8 @@ type CategoryMongoRepository struct {
 	ctx        context.Context
 }
 
+var _ CategoryRepositoryInterface = (*CategoryMongoRepository)(nil)
+
 func NewCategoryMongoRepository(ctx context.Context, collection *mongo.Collection) *CategoryMongoRepository {
 	return &CategoryMongoRepository{
 		collection: collection,

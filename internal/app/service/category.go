@@ -10,6 +10,8 @@ type DefaultCategoryService struct {
 	categoryRepo repository.CategoryRepositoryInterface
 }
 
+var _ CategoryServiceInteface = (*DefaultCategoryService)(nil)
+
 func NewDefaultCategoryService(categoryRepo repository.CategoryRepositoryInterface) *DefaultCategoryService {
 	return &DefaultCategoryService{
 		categoryRepo: categoryRepo,
