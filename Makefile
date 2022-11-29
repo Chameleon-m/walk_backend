@@ -6,11 +6,17 @@ endif
 
 GOFLAGS := CGO_ENABLED=0 GOOS=linux GOARCH=amd64
 
+.PHONY: api
 api:
 	${GOFLAGS} go run cmd/api/main.go
 
-consumers:
-	${GOFLAGS} go run cmd/consumers/place_reindex_rabbitmq.go
+consumer-reindex-place:
+	${GOFLAGS} go run cmd/consumers/place_reindex_go_rabbitmq/main.go \
+	--uri="${RABBITMQ_URI}" \
+	--exchange="${RABBITMQ_EXCHANGE_REINDEX}" \
+	--queue="${RABBITMQ_QUEUE_PLACE_REINDEX}" \
+	--binding-key="${RABBITMQ_ROUTING_PLACE_KEY}" \
+	--consumer-tag="consumer_reindex_place"
 
 generate-mocks:
 	mockgen -source internal/app/repository/place_repository_interface.go -destination internal/app/repository/mock/place_repository_mock.go -package repository

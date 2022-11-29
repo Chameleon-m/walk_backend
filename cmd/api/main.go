@@ -39,11 +39,12 @@ import (
 	"walk_backend/internal/app/api/presenter"
 	"walk_backend/internal/app/repository"
 	"walk_backend/internal/app/service"
+	rabbitmqLog "walk_backend/internal/pkg/go_rabbitmq"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/mongo/mongodriver"
 	"github.com/gin-gonic/gin"
-	amqp "github.com/rabbitmq/amqp091-go"
+	rabbitmq "github.com/wagslane/go-rabbitmq"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -54,10 +55,12 @@ var placesHandler *handlers.PlacesHandler
 var categoriesHandler *handlers.CategoriesHandler
 
 func init() {
-
+	log.SetFlags(log.LstdFlags | log.Lmsgprefix)
+	log.SetPrefix("[MAIN] ")
 }
 
 func main() {
+
 	// Create context that listens for the interrupt signal from the OS.
 	ctxSignal, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -65,59 +68,40 @@ func main() {
 	var err error
 
 	// DB
-	ctx := context.Background()
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(os.Getenv("MONGO_URI")))
+	ctxMongo, cancel := context.WithCancel(ctxSignal)
+	defer cancel()
+	mongoClientOptions := options.Client()
+	mongoClientOptions.ApplyURI(os.Getenv("MONGO_URI"))
+	mongoClient, err := mongo.Connect(ctxMongo, mongoClientOptions)
 	failOnError(err, "MongoDB")
 	defer func() {
-		failOnError(client.Disconnect(ctx), "MongoDB")
+		if err := mongoClient.Disconnect(ctxMongo); err != nil {
+			log.Printf("MongoDB: %s", err)
+		}
 	}()
 
-	failOnError(client.Ping(context.TODO(), readpref.Primary()), "MongoDB | Ping")
+	failOnError(mongoClient.Ping(ctxMongo, readpref.Primary()), "MongoDB | Ping")
 	log.Println("Connected to MongoDB")
 
 	mongoDB := os.Getenv("MONGO_INITDB_DATABASE")
 
 	// RabbitMQ
-	amqpConnection, err := amqp.Dial(os.Getenv("RABBITMQ_URI"))
-	failOnError(err, "RabbitMQ")
-	defer func() {
-		if !amqpConnection.IsClosed() {
-			failOnError(amqpConnection.Close(), "RabbitMQ | Close")
-		}
-	}()
+
+	rabbitmqLoggger := log.New(log.Writer(), "[RABBITMQ] ", log.LstdFlags|log.Lmsgprefix)
+	publisher, err := rabbitmq.NewPublisher(
+		os.Getenv("RABBITMQ_URI"),
+		rabbitmq.Config{},
+		rabbitmq.WithPublisherOptionsLogger(rabbitmqLog.NewLogger(rabbitmqLoggger, rabbitmqLoggger)),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer publisher.Close()
+
 	log.Println("Connected to RabbitMQ")
 
-	channelAmqp, err := amqpConnection.Channel()
-	failOnError(err, "RabbitMQ | Channel")
-	defer func() {
-		if !channelAmqp.IsClosed() {
-			failOnError(channelAmqp.Close(), "RabbitMQ | Chanel close error")
-		}
-	}()
-
-	go func() {
-		for {
-			select {
-			case err := <-amqpConnection.NotifyClose(make(chan *amqp.Error)):
-				if err != nil {
-					log.Printf("RabbitMQ | Connection closing: %s", err)
-					stop()
-				}
-			case err := <-channelAmqp.NotifyClose(make(chan *amqp.Error)):
-				if err != nil {
-					log.Printf("RabbitMQ | Channel closing: %s", err)
-					stop()
-				}
-			}
-		}
-	}()
-
-	err = channelAmqp.ExchangeDeclare(os.Getenv("RABBITMQ_EXCHANGE_REINDEX"), amqp.ExchangeDirect, true, false, false, false, nil)
-	failOnError(err, "RabbitMQ | Failed to declare a exchange")
-	placeQueue, err := channelAmqp.QueueDeclare(os.Getenv("RABBITMQ_QUEUE_PLACE_REINDEX"), true, false, false, false, nil)
-	failOnError(err, "RabbitMQ | Failed to declare a queue")
-	err = channelAmqp.QueueBind(placeQueue.Name, os.Getenv("RABBITMQ_ROUTING_PLACE_KEY"), os.Getenv("RABBITMQ_EXCHANGE_REINDEX"), false, nil)
-	failOnError(err, "RabbitMQ | Failed to bind a queue")
+	notifyReturn := publisher.NotifyReturn()
+	notifyPublish := publisher.NotifyPublish()
 
 	// SITE
 	siteSchema := os.Getenv("SITE_SCHEMA")
@@ -133,7 +117,7 @@ func main() {
 	failOnError(err, "SESSION | SESSION_MAX_AGE")
 
 	// session store // TODO Remake
-	colectionSessions := client.Database(mongoDB).Collection("sessions")
+	colectionSessions := mongoClient.Database(mongoDB).Collection("sessions")
 	sessionStore := mongodriver.NewStore(colectionSessions, sessionMaxAge, false, []byte(sessionSecret))
 	sessionStore.Options(sessions.Options{
 		Path:     sessionPath,
@@ -144,24 +128,27 @@ func main() {
 		SameSite: http.SameSiteLaxMode,
 	})
 
-	// auth // TODO Remake
-	collectionUsers := client.Database(mongoDB).Collection("users")
+	ctx, cancel := context.WithCancel(ctxSignal)
+	defer cancel()
+
+	// auth
+	collectionUsers := mongoClient.Database(mongoDB).Collection("users")
 	userMongoRepository := repository.NewUserMongoRepository(ctx, collectionUsers)
 	authService := service.NewDefaultAuthService(userMongoRepository)
 	tokenPresenter := presenter.NewTokenPresenter()
 	authHandler = handlers.NewAuthHandler(ctx, authService, tokenPresenter)
 
 	// category
-	collectionCategories := client.Database(mongoDB).Collection("categories")
+	collectionCategories := mongoClient.Database(mongoDB).Collection("categories")
 	categoryMongoRepository := repository.NewCategoryMongoRepository(ctx, collectionCategories)
 	categoryService := service.NewDefaultCategoryService(categoryMongoRepository)
 	categoryPresenter := presenter.NewCategoryPresenter()
 	categoriesHandler = handlers.NewCategoriesHandler(ctx, categoryService, categoryPresenter)
 
 	// place
-	collectionPlaces := client.Database(mongoDB).Collection("places")
+	collectionPlaces := mongoClient.Database(mongoDB).Collection("places")
 	placeMongoRepository := repository.NewPlaceMongoRepository(ctx, collectionPlaces)
-	placeQueueRabbitRepository := repository.NewPlaceQueueRabbitRepository(channelAmqp)
+	placeQueueRabbitRepository := repository.NewPlaceQueueRabbitRepository(publisher, notifyReturn, notifyPublish)
 	placeService := service.NewDefaultPlaceService(placeMongoRepository, categoryMongoRepository, placeQueueRabbitRepository)
 	placePresenter := presenter.NewPlacePresenter()
 	placesHandler = handlers.NewPlacesHandler(ctx, placeService, placePresenter)
@@ -202,7 +189,26 @@ func main() {
 		Handler: router,
 		// TODO
 	}
-	// srv.RegisterOnShutdown()
+	srv.RegisterOnShutdown(func() {
+		if err := publisher.Close(); err != nil {
+			log.Printf("error publisher during shutdown: %s", err)
+		}
+	})
+
+	done := make(chan bool, 1)
+	go func() {
+		select {
+		case <-ctx.Done():
+			log.Println("ctx done")
+		// Listen for the interrupt signal.
+		case <-ctxSignal.Done():
+			log.Println("os signal done")
+		case <-ctxMongo.Done():
+			log.Println("mongo done")
+		}
+
+		done <- true
+	}()
 
 	// Initializing the server in a goroutine so that it won't block the graceful shutdown handling below
 	go func() {
@@ -211,17 +217,17 @@ func main() {
 		}
 	}()
 
-	// Listen for the interrupt signal.
-	<-ctxSignal.Done()
+	// Awaiting done chan
+	<-done
 
 	// Restore default behavior on the interrupt signal and notify user of shutdown.
 	stop()
 	log.Println("shutting down gracefully, press Ctrl+C again to force")
 
 	// The context is used to inform the server it has 5 seconds to finish the request it is currently handling
-	ctxSignal, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctxShutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	failOnError(srv.Shutdown(ctxSignal), "Server forced to shutdown")
+	failOnError(srv.Shutdown(ctxShutdown), "Server forced to shutdown")
 
 	log.Println("Server exiting")
 }
