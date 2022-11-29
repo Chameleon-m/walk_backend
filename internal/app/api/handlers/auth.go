@@ -128,7 +128,14 @@ func (handler *AuthHandler) RefreshHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generate token"})
 		return
 	}
-	session.Set("username", sessionUser.(string))
+
+	username, ok := sessionUser.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error username type assertion"})
+		return
+	}
+
+	session.Set("username", username)
 	session.Set("token", sessionTokenNew)
 	session.Save()
 
