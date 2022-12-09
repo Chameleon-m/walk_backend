@@ -4,25 +4,38 @@ else
     migrateCommand := migrate -source file://migrations -database "${MONGO_URI_TEST}" -verbose
 endif
 
-GOFLAGS := CGO_ENABLED=0 GOOS=linux GOARCH=amd64
+BIN_DIR = $(PWD)/bin
 
-.PHONY: api
-api:
-	${GOFLAGS} go run cmd/api/main.go
+.PHONY: build
 
-consumer-reindex-place:
-	${GOFLAGS} go run cmd/consumers/place_reindex_go_rabbitmq/main.go \
-	--uri="${RABBITMQ_URI}" \
-	--exchange="${RABBITMQ_EXCHANGE_REINDEX}" \
-	--queue="${RABBITMQ_QUEUE_PLACE_REINDEX}" \
-	--binding-key="${RABBITMQ_ROUTING_PLACE_KEY}" \
-	--consumer-tag="consumer_reindex_place"
+clean:
+	rm -rf bin/*
 
-generate-mocks:
-	mockgen -source internal/app/repository/place_repository_interface.go -destination internal/app/repository/mock/place_repository_mock.go -package repository
-	mockgen -source internal/app/repository/category_repository_interface.go -destination internal/app/repository/mock/category_repository_mock.go -package repository
-	mockgen -source internal/app/service/place_service_interface.go -destination internal/app/service/mock/place_service_mock.go -package service
-	mockgen -source internal/app/service/category_service_interface.go -destination internal/app/service/mock/category_service_mock.go -package service
+dependencies:
+	go mod download
+
+build: dependencies build-api build-place-reindex-go-rabbitmq
+
+build-api: 
+	go build -tags ${GIN_MODE} -o ./bin/api cmd/api/main.go
+
+build-place-reindex-go-rabbitmq:
+	go build -tags ${GIN_MODE} -o ./bin/place_reindex_go_rabbitmq cmd/consumers/place_reindex_go_rabbitmq/main.go
+
+linux-binaries:
+	CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -tags "${GIN_MODE} netgo" -installsuffix netgo -o $(BIN_DIR)/api cmd/api/main.go
+	CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -tags "${GIN_MODE} netgo" -installsuffix netgo -o $(BIN_DIR)/place_reindex_go_rabbitmq cmd/consumers/place_reindex_go_rabbitmq/main.go
+
+fmt: ## gofmt and goimports all go files
+	find . -name '*.go' -not -wholename './vendor/*' | while read -r file; do gofmt -w -s "$$file"; goimports -w "$$file"; done
+
+build-mocks:
+	@go get github.com/golang/mock/gomock
+	@go install github.com/golang/mock/mockgen
+	@~/go/bin/mockgen -source internal/app/repository/place_repository_interface.go -destination internal/app/repository/mock/place_repository_mock.go -package mock
+	@~/go/bin/mockgen -source internal/app/repository/category_repository_interface.go -destination internal/app/repository/mock/category_repository_mock.go -package mock
+	@~/go/bin/mockgen -source internal/app/service/place_service_interface.go -destination internal/app/service/mock/place_service_mock.go -package mock
+	@~/go/bin/mockgen -source internal/app/service/category_service_interface.go -destination internal/app/service/mock/category_service_mock.go -package mock
 
 migrate-up:
 	$(migrateCommand) up $(if $n,$n,)
