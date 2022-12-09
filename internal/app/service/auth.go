@@ -19,7 +19,6 @@ type DefaultAuthService struct {
 	userRepo repository.UserRepositoryInterface
 }
 
-
 var _ AuthServiceInteface = (*DefaultAuthService)(nil)
 
 func NewDefaultAuthService(userRepo repository.UserRepositoryInterface) *DefaultAuthService {

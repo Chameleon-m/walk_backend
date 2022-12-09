@@ -50,7 +50,6 @@ func (s *DefaultCategoryService) Find(id model.ID) (*model.Category, error) {
 	return s.categoryRepo.Find(id)
 }
 
-
 func (s *DefaultCategoryService) makeModelFromCategoryDTO(d *dto.Category) (*model.Category, error) {
 
 	var id model.ID

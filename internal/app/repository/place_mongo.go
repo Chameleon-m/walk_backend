@@ -112,7 +112,7 @@ func (r *PlaceMongoRepository) Update(place *model.Place) error {
 }
 
 // Delete
-func (r *PlaceMongoRepository) Delete(id model.ID) error { 	
+func (r *PlaceMongoRepository) Delete(id model.ID) error {
 	deleteResult, err := r.collection.DeleteOne(r.ctx, bson.M{
 		"_id": id,
 	})
