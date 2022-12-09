@@ -1,0 +1,65 @@
+version: '3.9'
+
+services:
+
+  nginx:
+    extends:
+      file: ./deployments/docker/common.yml
+      service: nginx
+    volumes:
+      - ./deployments/docker/nginx/conf.d/api.conf:/etc/nginx/conf.d/api.conf:ro
+    depends_on:
+      - api
+
+  rabbitmq:
+    extends:
+      file: ./deployments/docker/common.yml
+      service: rabbitmq
+
+  
+  # setup MongoDB cluster for production
+  mongo-replica-setup:
+    extends:
+      file: ./deployments/docker/common.yml
+      service: mongo-replica-setup
+    depends_on:
+      mongo1:
+        condition: service_healthy
+
+  mongo1:
+    extends:
+      file: ./deployments/docker/common.yml
+      service: mongo1
+
+  api:
+    extends:
+      file: ./deployments/docker/api/docker-compose.yml
+      service: api
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      mongo1:
+        condition: service_healthy
+
+  place_reindex_go_rabbitmq:
+    extends:
+      file: ./deployments/docker/consumers/place_reindex_go_rabbitmq/docker-compose.yml
+      service: place_reindex_go_rabbitmq
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      mongo1:
+        condition: service_healthy
+
+volumes:
+  mongoData1:
+  mongoLog1:
+  mongoConfig1:
+  rabbitmqData:
+
+
+networks:
+  netApplication:
+    name: netApplication
+  netNginx:
+    name: netNginx

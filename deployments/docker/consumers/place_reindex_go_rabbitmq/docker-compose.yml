@@ -1,0 +1,30 @@
+version: '3.9'
+
+services:
+  place_reindex_go_rabbitmq:
+    container_name: place_reindex_go_rabbitmq
+    build:
+      context: ../../../../
+      dockerfile: ./deployments/docker/consumers/place_reindex_go_rabbitmq/Dockerfile
+      # cache_from:
+      #   - golang:1.19.4
+      #   - alpine:latest
+    environment:
+      MONGO_URI: ${MONGO_URI}
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
+      RABBITMQ_URI: ${RABBITMQ_URI}
+      RABBITMQ_EXCHANGE_TYPE: ${RABBITMQ_EXCHANGE_TYPE}
+      RABBITMQ_EXCHANGE_REINDEX: ${RABBITMQ_EXCHANGE_REINDEX}
+      RABBITMQ_ROUTING_PLACE_KEY: ${RABBITMQ_ROUTING_PLACE_KEY}
+      RABBITMQ_QUEUE_PLACE_REINDEX: ${RABBITMQ_QUEUE_PLACE_REINDEX}
+      RABBITMQ_CONSUMERS_PLACE_REINDEX_COUNT: ${RABBITMQ_CONSUMERS_PLACE_REINDEX_COUNT}
+      RABBITMQ_CONSUMERS_PLACE_REINDEX_TAG: ${RABBITMQ_CONSUMERS_PLACE_REINDEX_TAG}
+    networks:
+      - netApplication
+    external_links:
+      - mongo1
+      - rabbitmq
+
+networks:
+  netApplication:
+    name: netApplication
