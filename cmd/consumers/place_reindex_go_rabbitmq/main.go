@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"runtime"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -22,17 +22,10 @@ import (
 )
 
 var (
-	uri            = flag.String("uri", "amqp://guest:guest@localhost:5672/", "AMQP URI")
-	exchange       = flag.String("exchange", "test-exchange", "Durable, non-auto-deleted AMQP exchange name")
-	exchangeType   = flag.String("exchange-type", "direct", "Exchange type - direct|fanout|topic|x-custom")
-	queue          = flag.String("queue", "test-queue", "Ephemeral AMQP queue name")
-	bindingKey     = flag.String("binding-key", "test-key", "AMQP binding key")
-	consumerTag    = flag.String("consumer-tag", "simple-consumer", "AMQP consumer tag (should not be blank)")
 	prefetchCount  = flag.Int("prefetch-count", 0, "Qos prefetch count")
 	reconnectDelay = flag.Duration("reconnect-delay", 5*time.Second, "Reconnect delay")
 	ErrLog         = log.New(os.Stderr, "[ERROR] ", log.LstdFlags|log.Lmsgprefix)
 	Log            = log.New(os.Stdout, "[INFO] ", log.LstdFlags|log.Lmsgprefix)
-	workersCount   = flag.Int("workers-count", runtime.NumCPU(), "Workers count")
 )
 
 func init() {
@@ -45,10 +38,26 @@ func main() {
 	ctxSignal, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
+	// ENV
+	workersCount, err := strconv.Atoi(os.Getenv("RABBITMQ_CONSUMERS_PLACE_REINDEX_COUNT"))
+	if err != nil {
+		ErrLog.Fatalf("ENV RABBITMQ_CONSUMERS_PLACE_REINDEX_COUNT: %s", err)
+	}
+
+	mongoUri := os.Getenv("MONGO_URI")
+	mongoDB := os.Getenv("MONGO_INITDB_DATABASE")
+
+	rabbitmqUrl := os.Getenv("RABBITMQ_URI")
+	consumerTag := os.Getenv("RABBITMQ_CONSUMERS_PLACE_REINDEX_TAG")
+	exchange := os.Getenv("RABBITMQ_EXCHANGE_REINDEX")
+	exchangeType := os.Getenv("RABBITMQ_EXCHANGE_TYPE")
+	queue := os.Getenv("RABBITMQ_QUEUE_PLACE_REINDEX")
+	routingKey := os.Getenv("RABBITMQ_ROUTING_PLACE_KEY")
+
 	// DB
 	ctxMongo, cancel := context.WithCancel(ctxSignal)
 	defer cancel()
-	mongoClient, err := mongo.Connect(ctxMongo, options.Client().ApplyURI(os.Getenv("MONGO_URI")))
+	mongoClient, err := mongo.Connect(ctxMongo, options.Client().ApplyURI(mongoUri))
 	if err != nil {
 		ErrLog.Fatal(err)
 	}
@@ -62,11 +71,9 @@ func main() {
 	}
 	Log.Println("connected to MongoDB")
 
-	mongoDB := os.Getenv("MONGO_INITDB_DATABASE")
-
 	// Consumer configuration
 	consumer, err := rabbitmq.NewConsumer(
-		*uri,
+		rabbitmqUrl,
 		rabbitmq.Config{},
 		rabbitmq.WithConsumerOptionsLogger(rabbitmqLog.NewLogger(Log, ErrLog)),
 		rabbitmq.WithConsumerOptionsReconnectInterval(*reconnectDelay),
@@ -77,7 +84,7 @@ func main() {
 	defer consumer.Close()
 
 	publisher, err := rabbitmq.NewPublisher(
-		*uri,
+		rabbitmqUrl,
 		rabbitmq.Config{},
 		rabbitmq.WithPublisherOptionsLogging,
 	)
@@ -89,7 +96,7 @@ func main() {
 	notifyReturn := publisher.NotifyReturn()
 	notifyPublish := publisher.NotifyPublish()
 
-	log.Println("Connected to RabbitMQ")
+	Log.Println("Connected to RabbitMQ")
 
 	ctx, cancel := context.WithCancel(ctxSignal)
 	defer cancel()
@@ -145,23 +152,23 @@ func main() {
 			return rabbitmq.Ack
 		},
 
-		*queue,
-		[]string{*bindingKey},
-		rabbitmq.WithConsumeOptionsConcurrency(*workersCount),
+		queue,
+		[]string{routingKey},
+		rabbitmq.WithConsumeOptionsConcurrency(workersCount),
 		rabbitmq.WithConsumeOptionsQueueDurable,
 		// rabbitmq.WithConsumeOptionsQuorum,
-		rabbitmq.WithConsumeOptionsBindingExchangeName(*exchange),
-		rabbitmq.WithConsumeOptionsBindingExchangeKind(*exchangeType),
+		rabbitmq.WithConsumeOptionsBindingExchangeName(exchange),
+		rabbitmq.WithConsumeOptionsBindingExchangeKind(exchangeType),
 		rabbitmq.WithConsumeOptionsBindingExchangeDurable,
-		rabbitmq.WithConsumeOptionsConsumerName(*consumerTag),
+		rabbitmq.WithConsumeOptionsConsumerName(consumerTag),
 		rabbitmq.WithConsumeOptionsQOSPrefetch(*prefetchCount),
 	)
 	if err != nil {
-		log.Fatal(err)
+		ErrLog.Fatal(err)
 	}
 
 	// Awaiting done chan
 	<-done
 
-	Log.Printf("consumer %s exiting", *consumerTag)
+	Log.Printf("consumer %s exiting", consumerTag)
 }

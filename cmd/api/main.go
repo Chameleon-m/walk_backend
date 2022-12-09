@@ -189,11 +189,7 @@ func main() {
 		Handler: router,
 		// TODO
 	}
-	srv.RegisterOnShutdown(func() {
-		if err := publisher.Close(); err != nil {
-			log.Printf("error publisher during shutdown: %s", err)
-		}
-	})
+	// srv.RegisterOnShutdown()
 
 	done := make(chan bool, 1)
 	go func() {
