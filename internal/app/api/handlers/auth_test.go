@@ -117,7 +117,7 @@ func TestAuthHandler_Registration(t *testing.T) {
 		recorder := httptest.NewRecorder()
 		router.ServeHTTP(recorder, request)
 
-		assert.Equal(t, http.StatusInternalServerError, recorder.Code)
+		assert.Equal(t, http.StatusBadRequest, recorder.Code)
 	})
 
 	t.Run("Fail_user_model_validate", func(t *testing.T) {

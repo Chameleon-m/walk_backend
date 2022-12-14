@@ -27,13 +27,11 @@ func NewDefaultAuthService(userRepo repository.UserRepositoryInterface) *Default
 	}
 }
 
-// TODO
 func (s *DefaultAuthService) Registration(dto *dto.AuthLogin) (*model.User, error) {
 
 	user, err := s.userRepo.FindByUsername(dto.Username)
-	// TODO
 	if err != nil && !errors.Is(err, model.ErrModelNotFound) {
-		return nil, ErrInvalidUsernameOrPassword
+		return nil, err
 	} else if user != nil {
 		return nil, ErrInvalidUsernameOrPassword
 	}

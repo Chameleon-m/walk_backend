@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"log"
 	"net/http"
 
 	"walk_backend/internal/app/api/presenter"
@@ -50,6 +51,11 @@ func (handler *AuthHandler) SignUpHandler(c *gin.Context) {
 
 	_, err := handler.service.Registration(dto)
 	if err != nil {
+		if errors.Is(err, service.ErrInvalidUsernameOrPassword) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		log.Printf("[ERROR] Auth service registration err: %s", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
