@@ -30,12 +30,12 @@ fmt: ## gofmt and goimports all go files
 	find . -name '*.go' -not -wholename './vendor/*' | while read -r file; do gofmt -w -s "$$file"; goimports -w "$$file"; done
 
 build-mocks:
-	@go get github.com/golang/mock/gomock
-	@go install github.com/golang/mock/mockgen
 	@~/go/bin/mockgen -source internal/app/repository/place_repository_interface.go -destination internal/app/repository/mock/place_repository_mock.go -package mock
 	@~/go/bin/mockgen -source internal/app/repository/category_repository_interface.go -destination internal/app/repository/mock/category_repository_mock.go -package mock
+	@~/go/bin/mockgen -source internal/app/repository/user_repository_interface.go -destination internal/app/repository/mock/user_repository_mock.go -package mock
 	@~/go/bin/mockgen -source internal/app/service/place_service_interface.go -destination internal/app/service/mock/place_service_mock.go -package mock
 	@~/go/bin/mockgen -source internal/app/service/category_service_interface.go -destination internal/app/service/mock/category_service_mock.go -package mock
+	@~/go/bin/mockgen -source internal/app/service/auth_service_interface.go -destination internal/app/service/mock/auth_service_mock.go -package mock
 
 migrate-up:
 	$(migrateCommand) up $(if $n,$n,)
@@ -58,3 +58,10 @@ swagger-serve:
 	swagger serve -p 8081 ./api/swagger.json
 swagger-serve-f:
 	swagger serve -p 8081 -F swagger ./api/swagger.json
+
+test:
+	go test -tags testing ./...
+
+test-coverage:
+	go test -tags testing ./... -coverprofile=coverage.out
+	go tool cover -html=coverage.out -o coverage.html

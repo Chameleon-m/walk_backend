@@ -33,7 +33,7 @@ func (s *DefaultAuthService) Registration(dto *dto.AuthLogin) (*model.User, erro
 	user, err := s.userRepo.FindByUsername(dto.Username)
 	// TODO
 	if err != nil && !errors.Is(err, model.ErrModelNotFound) {
-		return nil, err
+		return nil, ErrInvalidUsernameOrPassword
 	} else if user != nil {
 		return nil, ErrInvalidUsernameOrPassword
 	}
