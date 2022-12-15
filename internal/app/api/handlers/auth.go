@@ -55,8 +55,8 @@ func (handler *AuthHandler) SignUpHandler(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		log.Printf("[ERROR] Auth service registration err: %s", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] Auth service registration error: %s", err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, "Auth service registration error")
 		return
 	}
 
@@ -90,7 +90,8 @@ func (handler *AuthHandler) SignInHandler(c *gin.Context) {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] Auth service login error: %s", err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, "Auth service login error")
 		return
 	}
 

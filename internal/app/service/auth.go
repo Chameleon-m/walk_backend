@@ -8,7 +8,6 @@ import (
 	"walk_backend/internal/app/repository"
 
 	"github.com/gofrs/uuid"
-	"golang.org/x/crypto/bcrypt"
 )
 
 var (
@@ -36,17 +35,7 @@ func (s *DefaultAuthService) Registration(dto *dto.AuthLogin) (*model.User, erro
 		return nil, ErrInvalidUsernameOrPassword
 	}
 
-	hashPassword, err := hashPassword(dto.Password)
-	if err != nil {
-		return nil, err
-	}
-
-	id, err := model.NewID()
-	if err != nil {
-		return nil, err
-	}
-
-	m, err := model.NewUserModel(id, dto.Username, hashPassword)
+	m, err := model.NewUserModel(dto.Username, dto.Password)
 	if err != nil {
 		return nil, err
 	}
@@ -68,11 +57,12 @@ func (s *DefaultAuthService) Login(dto *dto.AuthLogin) (*model.User, error) {
 		return nil, err
 	}
 
-	hashPassword, err := hashPassword(dto.Password)
+	err = user.CheckPassword(dto.Password)
 	if err != nil {
+		if errors.Is(err, model.ErrPassMismatched) {
+			return nil, ErrInvalidUsernameOrPassword
+		}
 		return nil, err
-	} else if checkPasswordHash(user.Password, hashPassword) {
-		return nil, ErrInvalidUsernameOrPassword
 	}
 
 	return user, nil
@@ -84,14 +74,4 @@ func (s *DefaultAuthService) GenerateToken() (string, error) {
 		return "", err
 	}
 	return token.String(), nil
-}
-
-func hashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	return string(bytes), err
-}
-
-func checkPasswordHash(password, hash string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	return err == nil
 }

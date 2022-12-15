@@ -5,10 +5,11 @@ import (
 
 	"walk_backend/internal/app/dto"
 
-	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/assert"
 	"walk_backend/internal/app/model"
 	mockRepository "walk_backend/internal/app/repository/mock"
+
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
 )
 
 type testCase struct {
@@ -31,7 +32,6 @@ func TestAuthService_Registration(t *testing.T) {
 		}
 
 		userModel, _ := model.NewUserModel(
-			model.NilID,
 			testCase.credentials.Username,
 			testCase.credentials.Password,
 		)

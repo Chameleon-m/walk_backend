@@ -29,7 +29,6 @@ func TestAuthHandler_Registration(t *testing.T) {
 		{Username: "test", Password: "test"},
 	}
 
-	userId, _ := model.NewID()
 	url := "/v1/auth/registration"
 
 	controller := gomock.NewController(t)
@@ -45,7 +44,7 @@ func TestAuthHandler_Registration(t *testing.T) {
 
 	t.Run("Ok", func(t *testing.T) {
 
-		user, err := model.NewUserModel(userId, credentialsCase[0].Username, credentialsCase[0].Password)
+		user, err := model.NewUserModel(credentialsCase[0].Username, credentialsCase[0].Password)
 		assert.Nil(t, err)
 
 		mockAuthService.
