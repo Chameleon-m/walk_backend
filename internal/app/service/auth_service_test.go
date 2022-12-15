@@ -18,6 +18,11 @@ type testCase struct {
 
 func TestAuthService_Registration(t *testing.T) {
 
+	controller := gomock.NewController(t)
+	defer controller.Finish()
+
+	mockUserRepository := mockRepository.NewMockUserRepositoryInterface(controller)
+
 	t.Run("ErrInvalidUsernameOrPassword", func(t *testing.T) {
 
 		testCase := testCase{
@@ -31,7 +36,6 @@ func TestAuthService_Registration(t *testing.T) {
 			testCase.credentials.Password,
 		)
 
-		mockUserRepository := mockRepository.NewMockUserRepositoryInterface(gomock.NewController(t))
 		mockUserRepository.
 			EXPECT().
 			FindByUsername(testCase.credentials.Username).
@@ -46,6 +50,11 @@ func TestAuthService_Registration(t *testing.T) {
 
 func TestAuthService_Login(t *testing.T) {
 
+	controller := gomock.NewController(t)
+	defer controller.Finish()
+
+	mockUserRepository := mockRepository.NewMockUserRepositoryInterface(controller)
+
 	t.Run("ErrInvalidUsernameOrPassword", func(t *testing.T) {
 
 		testCases := []testCase{
@@ -57,7 +66,6 @@ func TestAuthService_Login(t *testing.T) {
 
 		for _, testCase := range testCases {
 
-			mockUserRepository := mockRepository.NewMockUserRepositoryInterface(gomock.NewController(t))
 			mockUserRepository.
 				EXPECT().
 				FindByUsername(testCase.credentials.Username).

@@ -32,23 +32,27 @@ func TestAuthHandler_Registration(t *testing.T) {
 	userId, _ := model.NewID()
 	url := "/v1/auth/registration"
 
-	t.Run("Ok", func(t *testing.T) {
+	controller := gomock.NewController(t)
+	defer controller.Finish()
 
-		router := gin.Default()
-		apiV1 := router.Group("/v1")
+	router := gin.Default()
+	apiV1 := router.Group("/v1")
+
+	mockAuthService := mockService.NewMockAuthServiceInteface(controller)
+
+	mh := NewAuthHandler(context.Background(), mockAuthService, presenter.NewTokenPresenter())
+	mh.MakeHandlers(apiV1)
+
+	t.Run("Ok", func(t *testing.T) {
 
 		user, err := model.NewUserModel(userId, credentialsCase[0].Username, credentialsCase[0].Password)
 		assert.Nil(t, err)
 
-		mockAuthService := mockService.NewMockAuthServiceInteface(gomock.NewController(t))
 		mockAuthService.
 			EXPECT().
 			Registration(&credentialsCase[0]).
 			Return(user, nil).
 			Times(1)
-
-		mh := NewAuthHandler(context.Background(), mockAuthService, presenter.NewTokenPresenter())
-		mh.MakeHandlers(apiV1)
 
 		jsonCredentials, _ := json.Marshal(credentialsCase[0])
 
@@ -62,13 +66,6 @@ func TestAuthHandler_Registration(t *testing.T) {
 
 	t.Run("Empty_username_dto_validate", func(t *testing.T) {
 
-		router := gin.Default()
-		apiV1 := router.Group("/v1")
-
-		mockAuthService := mockService.NewMockAuthServiceInteface(gomock.NewController(t))
-		mh := NewAuthHandler(context.Background(), mockAuthService, presenter.NewTokenPresenter())
-		mh.MakeHandlers(apiV1)
-
 		jsonCredentials, _ := json.Marshal(credentialsCase[1])
 
 		request, _ := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(jsonCredentials))
@@ -79,13 +76,6 @@ func TestAuthHandler_Registration(t *testing.T) {
 	})
 
 	t.Run("Empty_password_dto_validate", func(t *testing.T) {
-
-		router := gin.Default()
-		apiV1 := router.Group("/v1")
-
-		mockAuthService := mockService.NewMockAuthServiceInteface(gomock.NewController(t))
-		mh := NewAuthHandler(context.Background(), mockAuthService, presenter.NewTokenPresenter())
-		mh.MakeHandlers(apiV1)
 
 		jsonCredentials, _ := json.Marshal(credentialsCase[2])
 
@@ -98,18 +88,11 @@ func TestAuthHandler_Registration(t *testing.T) {
 
 	t.Run("Fail_user_exist", func(t *testing.T) {
 
-		router := gin.Default()
-		apiV1 := router.Group("/v1")
-
-		mockAuthService := mockService.NewMockAuthServiceInteface(gomock.NewController(t))
 		mockAuthService.
 			EXPECT().
 			Registration(&credentialsCase[3]).
 			Return(nil, service.ErrInvalidUsernameOrPassword).
 			Times(1)
-
-		mh := NewAuthHandler(context.Background(), mockAuthService, presenter.NewTokenPresenter())
-		mh.MakeHandlers(apiV1)
 
 		jsonCredentials, _ := json.Marshal(credentialsCase[3])
 
@@ -122,18 +105,11 @@ func TestAuthHandler_Registration(t *testing.T) {
 
 	t.Run("Fail_user_model_validate", func(t *testing.T) {
 
-		router := gin.Default()
-		apiV1 := router.Group("/v1")
-
-		mockAuthService := mockService.NewMockAuthServiceInteface(gomock.NewController(t))
 		mockAuthService.
 			EXPECT().
 			Registration(&credentialsCase[4]).
 			Return(nil, model.ErrInvalidModel).
 			Times(1)
-
-		mh := NewAuthHandler(context.Background(), mockAuthService, presenter.NewTokenPresenter())
-		mh.MakeHandlers(apiV1)
 
 		jsonCredentials, _ := json.Marshal(credentialsCase[4])
 
