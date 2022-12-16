@@ -33,10 +33,14 @@ export SESSION_NAME=session_name
 export SESSION_PATH=/v1/auth
 export SESSION_DOMAIN=.localhost
 export SESSION_MAX_AGE=3600
-```
-Or
-```
-cp .env.example .env
+
+# RABBITMQ
+export RABBITMQ_URI="amqp://guest:guset@localhost:5672/"
+export RABBITMQ_DEFAULT_USER=guest
+export RABBITMQ_DEFAULT_PASSWORD=guest
+export RABBITMQ_EXCHANGE_REINDEX=reindex_exchange
+export RABBITMQ_ROUTING_PLACE_KEY=place_routing_key
+export RABBITMQ_QUEUE_PLACE_REINDEX=place_reindex_queue
 ```
 # DB
 
@@ -79,6 +83,8 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./.docker/nginx/keys
 ```
 openssl dhparam -out ./.docker/nginx/keys/dhparam.pem 4096
 ```
+
+# RABBITMQ
 
 # SWAGGER
 

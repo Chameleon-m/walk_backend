@@ -1,0 +1,44 @@
+version: '3.9'
+
+services:
+  api:
+    container_name: api
+    build:
+      context: ../../../
+      dockerfile: ./deployments/docker/api/Dockerfile
+      # cache_from:
+      #   - golang:1.19.4
+      #   - alpine:latest
+    environment:
+      MONGO_URI: ${MONGO_URI}
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
+      RABBITMQ_URI: ${RABBITMQ_URI}
+      RABBITMQ_EXCHANGE_TYPE: ${RABBITMQ_EXCHANGE_TYPE}
+      RABBITMQ_EXCHANGE_REINDEX: ${RABBITMQ_EXCHANGE_REINDEX}
+      RABBITMQ_ROUTING_PLACE_KEY: ${RABBITMQ_ROUTING_PLACE_KEY}
+      RABBITMQ_QUEUE_PLACE_REINDEX: ${RABBITMQ_QUEUE_PLACE_REINDEX}
+      RABBITMQ_CONSUMERS_PLACE_REINDEX_COUNT: ${RABBITMQ_CONSUMERS_PLACE_REINDEX_COUNT}
+      RABBITMQ_CONSUMERS_PLACE_REINDEX_TAG: ${RABBITMQ_CONSUMERS_PLACE_REINDEX_TAG}
+      SESSION_SECRET: ${SESSION_SECRET}
+      SESSION_NAME: ${SESSION_NAME}
+      SESSION_PATH: ${SESSION_PATH}
+      SESSION_DOMAIN: ${SESSION_DOMAIN}
+      SESSION_MAX_AGE: ${SESSION_MAX_AGE}
+      PORT: ${PORT}
+      API_VERSION: ${API_VERSION}
+      GIN_MODE: ${GIN_MODE}
+      SITE_SCHEMA: ${SITE_SCHEMA}
+      SITE_HOST: ${SITE_HOST}
+      SITE_PORT: ${SITE_PORT} 
+    networks:
+      - netApplication
+      - netNginx
+    external_links:
+      - mongo1
+      - rabbitmq
+
+networks:
+  netApplication:
+    name: netApplication
+  netNginx:
+    name: netNginx

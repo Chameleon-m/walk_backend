@@ -6,10 +6,10 @@ services:
     extends:
       file: ./deployments/docker/common.yml
       service: nginx
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
-      - ./deployments/docker/nginx/conf.d/api.conf:/etc/nginx/conf.d/api.conf:ro
-    depends_on:
-      - api
+      - ./deployments/docker/nginx/conf.d/localhost.conf:/etc/nginx/conf.d/localhost.conf:ro
 
   rabbitmq:
     extends:
@@ -30,26 +30,6 @@ services:
     extends:
       file: ./deployments/docker/common.yml
       service: mongo1
-
-  api:
-    extends:
-      file: ./deployments/docker/api/docker-compose.yml
-      service: api
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      mongo1:
-        condition: service_healthy
-
-  place_reindex_go_rabbitmq:
-    extends:
-      file: ./deployments/docker/consumers/place_reindex_go_rabbitmq/docker-compose.yml
-      service: place_reindex_go_rabbitmq
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      mongo1:
-        condition: service_healthy
 
 volumes:
   mongoData1:

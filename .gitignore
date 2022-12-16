@@ -1,4 +1,7 @@
 .idea
+bin/
 vendor/
 .env
 file.key
+coverage.out
+coverage.html
