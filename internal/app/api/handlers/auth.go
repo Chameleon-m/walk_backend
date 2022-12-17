@@ -14,12 +14,14 @@ import (
 	"golang.org/x/net/context"
 )
 
+// AuthHandler auth handler
 type AuthHandler struct {
 	service   service.AuthServiceInteface
 	ctx       context.Context
 	presenter presenter.TokenPresenterInteface
 }
 
+// NewAuthHandler create new auth handler
 func NewAuthHandler(ctx context.Context, service service.AuthServiceInteface, presenter presenter.TokenPresenterInteface) *AuthHandler {
 	return &AuthHandler{
 		service:   service,
@@ -28,6 +30,8 @@ func NewAuthHandler(ctx context.Context, service service.AuthServiceInteface, pr
 	}
 }
 
+// SignUpHandler registration
+//
 // swagger:operation POST /auth/registration auth signUp
 // Registration with username and password
 // ---
@@ -63,6 +67,8 @@ func (handler *AuthHandler) SignUpHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "User signed up"})
 }
 
+// SignInHandler login
+//
 // swagger:operation POST /auth/login auth signIn
 // Login with username and password
 // ---
@@ -109,6 +115,8 @@ func (handler *AuthHandler) SignInHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": data})
 }
 
+// RefreshHandler refresh token
+//
 // swagger:operation POST /auth/refresh-tokens auth refresh
 // Refresh token
 // ---
@@ -149,6 +157,8 @@ func (handler *AuthHandler) RefreshHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "New session issued"})
 }
 
+// SignOutHandler logout
+//
 // swagger:operation POST /auth/logout auth signOut
 // Signing out
 // ---
@@ -163,6 +173,7 @@ func (handler *AuthHandler) SignOutHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Signed out..."})
 }
 
+// MakeHandlers make handlers
 func (handler *AuthHandler) MakeHandlers(router *gin.RouterGroup) {
 
 	router.POST("/auth/registration", handler.SignUpHandler)

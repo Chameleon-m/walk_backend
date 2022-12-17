@@ -6,22 +6,26 @@ import (
 	"walk_backend/internal/app/repository"
 )
 
+// DefaultCategoryService ...
 type DefaultCategoryService struct {
 	categoryRepo repository.CategoryRepositoryInterface
 }
 
 var _ CategoryServiceInteface = (*DefaultCategoryService)(nil)
 
+// NewDefaultCategoryService create new default category service
 func NewDefaultCategoryService(categoryRepo repository.CategoryRepositoryInterface) *DefaultCategoryService {
 	return &DefaultCategoryService{
 		categoryRepo: categoryRepo,
 	}
 }
 
+// ListCategories ...
 func (s *DefaultCategoryService) ListCategories() (model.CategoryList, error) {
 	return s.categoryRepo.FindAll()
 }
 
+// Create ...
 func (s *DefaultCategoryService) Create(d *dto.Category) (model.ID, error) {
 
 	m, err := s.makeModelFromCategoryDTO(d)
@@ -32,6 +36,7 @@ func (s *DefaultCategoryService) Create(d *dto.Category) (model.ID, error) {
 	return s.categoryRepo.Create(m)
 }
 
+// Update ...
 func (s *DefaultCategoryService) Update(d *dto.Category) error {
 
 	m, err := s.makeModelFromCategoryDTO(d)
@@ -42,10 +47,12 @@ func (s *DefaultCategoryService) Update(d *dto.Category) error {
 	return s.categoryRepo.Update(m)
 }
 
+// Delete ...
 func (s *DefaultCategoryService) Delete(id model.ID) error {
 	return s.categoryRepo.Delete(id)
 }
 
+// Find ...
 func (s *DefaultCategoryService) Find(id model.ID) (*model.Category, error) {
 	return s.categoryRepo.Find(id)
 }

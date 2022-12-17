@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Cors middleware
 func Cors(siteSchema string, siteHost string, sitePort string) gin.HandlerFunc {
 	AllowOrigins := []string{siteSchema + "://" + siteHost + ":" + sitePort}
 	return cors.New(cors.Config{

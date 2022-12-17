@@ -20,6 +20,7 @@ type PlaceMongoRepository struct {
 
 var _ PlaceRepositoryInterface = (*PlaceMongoRepository)(nil)
 
+// NewPlaceMongoRepository create new mongo place repository
 func NewPlaceMongoRepository(ctx context.Context, collection *mongo.Collection) *PlaceMongoRepository {
 	return &PlaceMongoRepository{
 		collection: collection,
@@ -70,7 +71,7 @@ func (r *PlaceMongoRepository) FindAll() (model.PlaceList, error) {
 	return mList, nil
 }
 
-// Create
+// Create ...
 func (r *PlaceMongoRepository) Create(place *model.Place) (model.ID, error) {
 
 	if place.ID.IsNil() {
@@ -87,7 +88,7 @@ func (r *PlaceMongoRepository) Create(place *model.Place) (model.ID, error) {
 	return place.ID, err
 }
 
-// Update
+// Update ...
 func (r *PlaceMongoRepository) Update(place *model.Place) error {
 
 	place.UpdatedAt = time.Now()
@@ -111,7 +112,7 @@ func (r *PlaceMongoRepository) Update(place *model.Place) error {
 	return err
 }
 
-// Delete
+// Delete ...
 func (r *PlaceMongoRepository) Delete(id model.ID) error {
 	deleteResult, err := r.collection.DeleteOne(r.ctx, bson.M{
 		"_id": id,
@@ -124,6 +125,7 @@ func (r *PlaceMongoRepository) Delete(id model.ID) error {
 	return err
 }
 
+// Search ...
 func (r *PlaceMongoRepository) Search(search string) (model.PlaceList, error) {
 
 	sort := options.Find()

@@ -4,10 +4,12 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
+// NewPlaceDTO create new place DTO
 func NewPlaceDTO() *Place {
 	return &Place{}
 }
 
+// Place ...
 type Place struct {
 	ID          string   `json:"id" binding:"-"`
 	Name        string   `json:"name" binding:"required"`
@@ -16,6 +18,7 @@ type Place struct {
 	Tags        []string `json:"tags"`
 }
 
+// ValidatePlaceDTO validate place DTO
 func ValidatePlaceDTO(sl validator.StructLevel) {
 
 	place, ok := sl.Current().Interface().(Place)
@@ -24,11 +27,6 @@ func ValidatePlaceDTO(sl validator.StructLevel) {
 	}
 
 	if len(place.Name) < 5 {
-		// place.Name -> sl.Current().Interface()
 		sl.ReportError(sl.Current().Interface(), "name", "Name", "tag", "param")
 	}
 }
-
-// https://github.com/go-playground/validator/blob/master/_examples/simple/main.go#L56
-// https://www.golangprograms.com/go-struct-and-field-validation-examples.html
-// https://blog.depa.do/post/gin-validation-errors-handling

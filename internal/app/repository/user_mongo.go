@@ -19,6 +19,7 @@ type UserMongoRepository struct {
 
 var _ UserRepositoryInterface = (*UserMongoRepository)(nil)
 
+// NewUserMongoRepository create new user mongo repository
 func NewUserMongoRepository(ctx context.Context, collection *mongo.Collection) *UserMongoRepository {
 	return &UserMongoRepository{
 		collection: collection,
@@ -26,6 +27,7 @@ func NewUserMongoRepository(ctx context.Context, collection *mongo.Collection) *
 	}
 }
 
+// Create ...
 func (r *UserMongoRepository) Create(m *model.User) (model.ID, error) {
 	if m.ID.IsNil() {
 		id, err := model.NewID()
@@ -41,7 +43,7 @@ func (r *UserMongoRepository) Create(m *model.User) (model.ID, error) {
 	return m.ID, err
 }
 
-// Find user bu username
+// FindByUsername user bu username
 func (r *UserMongoRepository) FindByUsername(username string) (*model.User, error) {
 
 	cur := r.collection.FindOne(r.ctx, bson.M{

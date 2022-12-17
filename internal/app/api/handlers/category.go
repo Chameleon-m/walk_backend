@@ -13,12 +13,14 @@ import (
 	"golang.org/x/net/context"
 )
 
+// CategoriesHandler categories handler struct
 type CategoriesHandler struct {
 	service   service.CategoryServiceInteface
 	ctx       context.Context
 	presenter presenter.CategoryPresenterInteface
 }
 
+// NewCategoriesHandler create new categories handler
 func NewCategoriesHandler(ctx context.Context, service service.CategoryServiceInteface, presenter presenter.CategoryPresenterInteface) *CategoriesHandler {
 	return &CategoriesHandler{
 		service:   service,
@@ -27,6 +29,8 @@ func NewCategoriesHandler(ctx context.Context, service service.CategoryServiceIn
 	}
 }
 
+// ListCategoriesHandler ...
+//
 // swagger:operation GET /categories categories ListCategories
 // Returns list of categories
 // ---
@@ -48,6 +52,8 @@ func (handler *CategoriesHandler) ListCategoriesHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": data})
 }
 
+// NewCategoryHandler ...
+//
 // swagger:operation POST /categories categories newCategory
 // Create a new category
 // ---
@@ -74,10 +80,12 @@ func (handler *CategoriesHandler) NewCategoryHandler(c *gin.Context) {
 		return
 	}
 
-	c.Header("Location", makeUrl(c.Request, "/v1/categories/"+id.String()))
+	c.Header("Location", makeURL(c.Request, "/v1/categories/"+id.String()))
 	c.JSON(http.StatusCreated, gin.H{"id": id})
 }
 
+// UpdateCategryHandler ...
+//
 // swagger:operation PUT /categories/{id} categories updateCategory
 // Update an existing category
 // ---
@@ -122,6 +130,8 @@ func (handler *CategoriesHandler) UpdateCategryHandler(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// DeleteCategoryHandler ...
+//
 // swagger:operation DELETE /categories/{id} categories deleteCategory
 // Delete an existing category
 // ---
@@ -162,6 +172,8 @@ func (handler *CategoriesHandler) DeleteCategoryHandler(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// GetOneCategoryHandler ...
+//
 // swagger:operation GET /categories/{id} categories findCategoryByID
 // Get one category
 // ---
@@ -204,6 +216,7 @@ func (handler *CategoriesHandler) GetOneCategoryHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": data})
 }
 
+// MakeHandlers ...
 func (handler *CategoriesHandler) MakeHandlers(router *gin.RouterGroup, routerAuth *gin.RouterGroup) {
 
 	router.GET("/categories", handler.ListCategoriesHandler)

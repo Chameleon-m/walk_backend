@@ -9,6 +9,7 @@ import (
 	"github.com/gosimple/slug"
 )
 
+// DefaultPlaceService ...
 type DefaultPlaceService struct {
 	placeRepo    repository.PlaceRepositoryInterface
 	categoryRepo repository.CategoryRepositoryInterface
@@ -17,6 +18,7 @@ type DefaultPlaceService struct {
 
 var _ PlaceServiceInteface = (*DefaultPlaceService)(nil)
 
+// NewDefaultPlaceService create new default place service
 func NewDefaultPlaceService(
 	placeRepo repository.PlaceRepositoryInterface,
 	categoryRepo repository.CategoryRepositoryInterface,
@@ -29,10 +31,12 @@ func NewDefaultPlaceService(
 	}
 }
 
+// ListPlaces ...
 func (s *DefaultPlaceService) ListPlaces() (model.PlaceList, error) {
 	return s.placeRepo.FindAll()
 }
 
+// Create ...
 func (s *DefaultPlaceService) Create(d *dto.Place) (model.ID, error) {
 
 	m, err := s.makeModelFromPlaceDTO(d)
@@ -53,6 +57,7 @@ func (s *DefaultPlaceService) Create(d *dto.Place) (model.ID, error) {
 	return id, nil
 }
 
+// Update ...
 func (s *DefaultPlaceService) Update(d *dto.Place) error {
 
 	m, err := s.makeModelFromPlaceDTO(d)
@@ -72,6 +77,7 @@ func (s *DefaultPlaceService) Update(d *dto.Place) error {
 	return nil
 }
 
+// Delete ...
 func (s *DefaultPlaceService) Delete(id model.ID) error {
 
 	if err := s.placeRepo.Delete(id); err != nil {
@@ -85,18 +91,22 @@ func (s *DefaultPlaceService) Delete(id model.ID) error {
 	return nil
 }
 
+// Find ...
 func (s *DefaultPlaceService) Find(id model.ID) (*model.Place, error) {
 	return s.placeRepo.Find(id)
 }
 
+// Search ...
 func (s *DefaultPlaceService) Search(search string) (model.PlaceList, error) {
 	return s.placeRepo.Search(search)
 }
 
+// ListCategories ...
 func (s *DefaultPlaceService) ListCategories() (model.CategoryList, error) {
 	return s.categoryRepo.FindAll()
 }
 
+// FindCategory ...
 func (s *DefaultPlaceService) FindCategory(id model.ID) (*model.Category, error) {
 	return s.categoryRepo.Find(id)
 }

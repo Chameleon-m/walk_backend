@@ -11,21 +11,25 @@ import (
 )
 
 var (
+	// ErrInvalidUsernameOrPassword ...
 	ErrInvalidUsernameOrPassword = errors.New("Invalid username or password")
 )
 
+// DefaultAuthService ...
 type DefaultAuthService struct {
 	userRepo repository.UserRepositoryInterface
 }
 
 var _ AuthServiceInteface = (*DefaultAuthService)(nil)
 
+// NewDefaultAuthService create new default auth service
 func NewDefaultAuthService(userRepo repository.UserRepositoryInterface) *DefaultAuthService {
 	return &DefaultAuthService{
 		userRepo: userRepo,
 	}
 }
 
+// Registration ...
 func (s *DefaultAuthService) Registration(dto *dto.AuthLogin) (*model.User, error) {
 
 	user, err := s.userRepo.FindByUsername(dto.Username)
@@ -47,6 +51,7 @@ func (s *DefaultAuthService) Registration(dto *dto.AuthLogin) (*model.User, erro
 	return m, nil
 }
 
+// Login ...
 func (s *DefaultAuthService) Login(dto *dto.AuthLogin) (*model.User, error) {
 
 	user, err := s.userRepo.FindByUsername(dto.Username)
@@ -68,6 +73,7 @@ func (s *DefaultAuthService) Login(dto *dto.AuthLogin) (*model.User, error) {
 	return user, nil
 }
 
+// GenerateToken ...
 func (s *DefaultAuthService) GenerateToken() (string, error) {
 	token, err := uuid.NewV7()
 	if err != nil {

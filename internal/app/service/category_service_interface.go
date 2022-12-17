@@ -5,6 +5,7 @@ import (
 	"walk_backend/internal/app/model"
 )
 
+// CategoryServiceInteface ...
 type CategoryServiceInteface interface {
 	ListCategories() (model.CategoryList, error)
 	Create(dto *dto.Category) (model.ID, error)

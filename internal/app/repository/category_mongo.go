@@ -19,6 +19,7 @@ type CategoryMongoRepository struct {
 
 var _ CategoryRepositoryInterface = (*CategoryMongoRepository)(nil)
 
+// NewCategoryMongoRepository create new mongo category repository
 func NewCategoryMongoRepository(ctx context.Context, collection *mongo.Collection) *CategoryMongoRepository {
 	return &CategoryMongoRepository{
 		collection: collection,
@@ -69,7 +70,7 @@ func (r *CategoryMongoRepository) FindAll() (model.CategoryList, error) {
 	return mList, nil
 }
 
-// Create
+// Create ...
 func (r *CategoryMongoRepository) Create(m *model.Category) (model.ID, error) {
 
 	if m.ID.IsNil() {
@@ -85,7 +86,7 @@ func (r *CategoryMongoRepository) Create(m *model.Category) (model.ID, error) {
 	return m.ID, err
 }
 
-// Update
+// Update ...
 func (r *CategoryMongoRepository) Update(m *model.Category) error {
 
 	fmt.Println(m)
@@ -105,7 +106,7 @@ func (r *CategoryMongoRepository) Update(m *model.Category) error {
 	return err
 }
 
-// Delete
+// Delete ...
 func (r *CategoryMongoRepository) Delete(id model.ID) error {
 	deleteResult, err := r.collection.DeleteOne(r.ctx, bson.M{
 		"_id": id,

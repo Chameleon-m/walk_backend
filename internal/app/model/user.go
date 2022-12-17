@@ -7,6 +7,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// NewUserModel create new user model
 func NewUserModel(username string, password string) (*User, error) {
 	id, err := NewID()
 	if err != nil {
@@ -32,6 +33,8 @@ func NewUserModel(username string, password string) (*User, error) {
 	return m, nil
 }
 
+// User ...
+//
 // swagger:parameters auth signIn
 type User struct {
 	// swagger:ignore
@@ -42,6 +45,7 @@ type User struct {
 	CreatedAt time.Time `bson:"createdAt"`
 }
 
+// Validate calidate user model
 func (m *User) Validate() error {
 
 	if m.Username == "" || m.Password == "" {
@@ -51,8 +55,8 @@ func (m *User) Validate() error {
 }
 
 // CheckPassword check user password
-func (u *User) CheckPassword(password string) error {
-	err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password))
+func (m *User) CheckPassword(password string) error {
+	err := bcrypt.CompareHashAndPassword([]byte(m.Password), []byte(password))
 	if err != nil && errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
 		return ErrPassMismatched
 	}

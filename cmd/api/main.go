@@ -39,7 +39,7 @@ import (
 	"walk_backend/internal/app/api/presenter"
 	"walk_backend/internal/app/repository"
 	"walk_backend/internal/app/service"
-	rabbitmqLog "walk_backend/internal/pkg/go_rabbitmq"
+	rabbitmqLog "walk_backend/internal/pkg/rabbitmqcustom"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/mongo/mongodriver"
@@ -163,7 +163,7 @@ func main() {
 
 	// common midelleware
 	router.Use(middleware.Cors(siteSchema, siteHost, sitePort))
-	router.Use(middleware.RequestAbsUrl())
+	router.Use(middleware.RequestAbsURL())
 
 	// routes for version 1
 	apiV1 := router.Group("/v1")
@@ -228,6 +228,7 @@ func main() {
 	log.Println("Server exiting")
 }
 
+// VersionHandler api version
 func VersionHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"version": os.Getenv("API_VERSION")})
 }

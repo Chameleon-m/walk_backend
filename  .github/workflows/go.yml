@@ -29,6 +29,11 @@ jobs:
         cache-dependency-path: go.mod
         architecture: x64
 
+    - name: Code linting
+      run: |
+        go get -u golang.org/x/lint/golint
+        golint ./...
+
     - name: Build
       run: make build
 

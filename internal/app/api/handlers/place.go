@@ -15,12 +15,14 @@ import (
 	"golang.org/x/net/context"
 )
 
+// PlacesHandler ... 
 type PlacesHandler struct {
 	service   service.PlaceServiceInteface
 	ctx       context.Context
 	presenter presenter.PlacePresenterInteface
 }
 
+// NewPlacesHandler ...
 func NewPlacesHandler(ctx context.Context, service service.PlaceServiceInteface, presenter presenter.PlacePresenterInteface) *PlacesHandler {
 	return &PlacesHandler{
 		service:   service,
@@ -29,6 +31,8 @@ func NewPlacesHandler(ctx context.Context, service service.PlaceServiceInteface,
 	}
 }
 
+// ListPlacesHandler ...
+//
 // swagger:operation GET /places places listPlaces
 // Returns list of places
 // ---
@@ -59,6 +63,8 @@ func (handler *PlacesHandler) ListPlacesHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": data})
 }
 
+// NewPlaceHandler ...
+//
 // swagger:operation POST /places places newPlace
 // Create a new place
 // ---
@@ -85,10 +91,12 @@ func (handler *PlacesHandler) NewPlaceHandler(c *gin.Context) {
 		return
 	}
 
-	c.Header("Location", makeUrl(c.Request, "/v1/places/"+id.String()))
+	c.Header("Location", makeURL(c.Request, "/v1/places/"+id.String()))
 	c.JSON(http.StatusCreated, gin.H{"id": id})
 }
 
+// UpdatePlaceHandler ...
+//
 // swagger:operation PUT /places/{id} places updatePlace
 // Update an existing place
 // ---
@@ -133,6 +141,8 @@ func (handler *PlacesHandler) UpdatePlaceHandler(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// DeletePlaceHandler ...
+//
 // swagger:operation DELETE /places/{id} places deletePlace
 // Delete an existing place
 // ---
@@ -173,6 +183,8 @@ func (handler *PlacesHandler) DeletePlaceHandler(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// GetOnePlaceHandler ...
+//
 // swagger:operation GET /places/{id} places findPlaceByID
 // Get one place
 // ---
@@ -225,6 +237,8 @@ func (handler *PlacesHandler) GetOnePlaceHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": data})
 }
 
+// SearchPlacesHandler ...
+//
 // swagger:operation GET /places/search places findPlace
 // Search places based on name, description and tags
 // ---
@@ -262,6 +276,7 @@ func (handler *PlacesHandler) SearchPlacesHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": data})
 }
 
+// MakeHandlers make places routes
 func (handler *PlacesHandler) MakeHandlers(router *gin.RouterGroup, routerAuth *gin.RouterGroup) {
 
 	router.GET("/places", handler.ListPlacesHandler)
@@ -273,6 +288,7 @@ func (handler *PlacesHandler) MakeHandlers(router *gin.RouterGroup, routerAuth *
 	routerAuth.DELETE("/places/:id", handler.DeletePlaceHandler)
 }
 
+// MakeRequestValidation make request validation
 func (handler *PlacesHandler) MakeRequestValidation() {
 
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {

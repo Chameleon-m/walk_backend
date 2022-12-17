@@ -13,10 +13,12 @@ type Place struct {
 	Tags        []string `json:"tags"`
 }
 
+// NewPlacePresenter create new place presenter
 func NewPlacePresenter() *Place {
 	return &Place{}
 }
 
+// Make make place presenter
 func (p Place) Make(m *model.Place, c *model.Category) *Place {
 	p.ID = m.ID.String()
 	p.Name = m.Name
@@ -26,6 +28,7 @@ func (p Place) Make(m *model.Place, c *model.Category) *Place {
 	return &p
 }
 
+// MakeList make list place prersenters
 func (p *Place) MakeList(mList model.PlaceList, cList model.CategoryList) []*Place {
 
 	list := make([]*Place, len(mList))

@@ -5,6 +5,7 @@ import (
 	"walk_backend/internal/app/model"
 )
 
+// PlaceServiceInteface ...
 type PlaceServiceInteface interface {
 	ListPlaces() (model.PlaceList, error)
 	Create(dto *dto.Place) (model.ID, error)
