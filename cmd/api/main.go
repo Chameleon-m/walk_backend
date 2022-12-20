@@ -44,6 +44,7 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/mongo/mongodriver"
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	rabbitmq "github.com/wagslane/go-rabbitmq"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -162,6 +163,7 @@ func main() {
 	// router.UseH2C = true
 
 	// common midelleware
+	router.Use(middleware.Prometheus())
 	router.Use(middleware.Cors(siteSchema, siteHost, sitePort))
 	router.Use(middleware.RequestAbsURL())
 
@@ -182,6 +184,7 @@ func main() {
 	categoriesHandler.MakeHandlers(apiV1, apiV1auth)
 
 	router.GET("/version", VersionHandler)
+	router.GET("/prometheus", gin.WrapH(promhttp.Handler()))
 
 	// build server
 	srv := &http.Server{

@@ -16,8 +16,6 @@ services:
       file: ./deployments/docker/common.yml
       service: rabbitmq
 
-  
-  # setup MongoDB cluster for production
   mongo-replica-setup:
     extends:
       file: ./deployments/docker/common.yml
@@ -51,11 +49,22 @@ services:
       mongo1:
         condition: service_healthy
 
+  prometheus:
+    extends:
+      file: ./deployments/docker/common.yml
+      service: prometheus
+
+  grafana:
+    extends:
+      file: ./deployments/docker/common.yml
+      service: grafana
+
 volumes:
   mongoData1:
   mongoLog1:
   mongoConfig1:
   rabbitmqData:
+  grafanaStorage:
 
 
 networks:
