@@ -33,31 +33,84 @@ services:
     extends:
       file: ./deployments/docker/api/docker-compose.yml
       service: api
+    restart: always
     depends_on:
       rabbitmq:
         condition: service_healthy
       mongo1:
         condition: service_healthy
+    external_links:
+      - mongo1
+      - rabbitmq
+      - logstash
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://localhost:12201"
+        tag: "app-api"
 
   place_reindex_go_rabbitmq:
     extends:
       file: ./deployments/docker/consumers/place_reindex_go_rabbitmq/docker-compose.yml
       service: place_reindex_go_rabbitmq
+    restart: always
     depends_on:
       rabbitmq:
         condition: service_healthy
       mongo1:
         condition: service_healthy
+    external_links:
+      - mongo1
+      - rabbitmq
+      - logstash
 
   prometheus:
     extends:
       file: ./deployments/docker/common.yml
       service: prometheus
+    volumes:
+      - ./deployments/docker/prometheus/api.yml:/etc/prometheus/prometheus.yml:ro
 
   grafana:
     extends:
       file: ./deployments/docker/common.yml
       service: grafana
+
+# cat /var/log/syslog | nc -q0 localhost 5000
+  logstash:
+    extends:
+      file: ./deployments/docker/common.yml
+      service: logstash
+    volumes:
+      - ./logstash/pipeline/api.conf:/usr/share/logstash/pipeline/api.conf:ro
+    environment:
+      XPACK_MONITORING_ENABLED: "true"
+
+# /usr/share/elasticsearch/logs/docker-cluster.log
+  elasticsearch:
+    extends:
+      file: ./deployments/docker/common.yml
+      service: elasticsearch
+    environment:
+      node.name: es01
+      cluster.name: docker-cluster
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      bootstrap.memory_lock: "true"
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+      # ES_JAVA_OPTS: -Xms512m -Xmx512m --enable-preview
+    mem_limit: 1073741824
+    # ulimits:
+    #   memlock:
+    #     soft: -1
+    #     hard: -1
+
+  kibana:
+    extends:
+      file: ./deployments/docker/common.yml
+      service: kibana
+    depends_on:
+      - elasticsearch
 
 volumes:
   mongoData1:
@@ -65,7 +118,7 @@ volumes:
   mongoConfig1:
   rabbitmqData:
   grafanaStorage:
-
+  elasticsearchStorage:
 
 networks:
   netApplication:

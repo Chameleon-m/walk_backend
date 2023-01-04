@@ -36,6 +36,7 @@ services:
     external_links:
       - mongo1
       - rabbitmq
+      - logstash
 
 networks:
   netApplication:

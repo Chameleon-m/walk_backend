@@ -4,7 +4,7 @@ services:
 
   nginx:
     container_name: nginx
-    image: 'nginx:latest'
+    image: 'nginx:1.23.3'
     ports:
       - 80:80
       - 443:443
@@ -39,11 +39,9 @@ services:
       - ./rabbitmq/conf.d/:/etc/rabbitmq/conf.d/
       - rabbitmqData:/var/lib/rabbitmq/
 
-  
-  # setup MongoDB cluster for production
   mongo-replica-setup:
     container_name: mongo-setup
-    image: 'mongo:latest'
+    image: 'mongo:6.0.3'
     networks:
       - netApplication
     volumes:
@@ -56,16 +54,17 @@ services:
 
   mongo1:
     container_name: 'mongo1'
-    image: 'mongo:latest'
+    image: 'mongo:6.0.3'
     command:
       [
-        "-f",
+        "--config",
         "/etc/mongod.conf",
         "--keyFile",
         "/auth/file.key",
         "--replSet",
         "${MONGO_REPLICA_SET_NAME}",
-        "--bind_ip_all"
+        "--bind_ip_all",
+        "--auth"
       ]
     ports:
       - 27017:27017
@@ -77,13 +76,14 @@ services:
       - mongoConfig1:/data/configdb
       - ./mongodb/mongod.conf:/etc/mongod.conf
       - ./mongodb/file.key:/auth/file.key
-      - ./mongodb/docker-entrypoint-initdb.d/:/docker-entrypoint-initdb.d/
+      - ./mongodb/docker-entrypoint-initdb.d/usercreate.sh:/docker-entrypoint-initdb.d/usercreate.sh
+      - ./mongodb/docker-entrypoint-initdb.d/authkey.sh:/docker-entrypoint-initdb.d/authkey.sh
     healthcheck:
-      test: echo 'rs.status().ok' | mongosh admin -u $${MONGO_INITDB_ROOT_USERNAME} -p $${MONGO_INITDB_ROOT_PASSWORD} --quiet | grep 1
-      interval: 5s
-      timeout: 10s
-      retries: 1
-      start_period: 5s
+      test: echo 'db.runCommand({serverStatus:1}).ok' | mongosh admin -u $${MONGO_INITDB_ROOT_USERNAME} -p $${MONGO_INITDB_ROOT_PASSWORD} --quiet | grep 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
@@ -95,8 +95,8 @@ services:
   prometheus:
     container_name: 'prometheus'
     image: 'prom/prometheus:latest'
-    volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    # volumes:
+    #   - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - 9090:9090
     restart: always
@@ -114,12 +114,63 @@ services:
     networks:
       - netApplication
 
+# RUN rm -f /usr/share/logstash/pipeline/logstash.conf
+# /usr/share/logstash/config/log4j2.properties
+# https://www.elastic.co/guide/en/logstash/current/config-setting-files.html#settings-files
+# https://www.elastic.co/guide/en/logstash/current/docker-config.html#_logging_configuration
+  logstash:
+    container_name: 'logstash'
+    image: 'logstash:8.5.3'
+    # command: logstash -f /etc/logstash/logstash.conf
+    volumes:
+      - ./logstash/pipeline/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+      - ./logstash/config/jvm.options:/usr/share/logstash/config/jvm.options:ro
+      - ./logstash/config/log4j2.properties:/usr/share/logstash/config/log4j2.properties:ro
+      - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+      - ./logstash/config/pipelines.yml:/usr/share/logstash/config/pipelines.yml:ro
+      - ./logstash/config/startup.options:/usr/share/logstash/config/startup.options:ro
+    networks:
+      - netApplication
+    ports:
+      - "5000:5000"
+      - "12201:12201"
+      - "12201:12201/udp"
+    environment:
+      QUEUE_TYPE: memory
+      # QUEUE_TYPE: persisted
+
+  elasticsearch:
+    container_name: 'elasticsearch'
+    image: 'elasticsearch:8.5.3'
+    ports:
+      - 9200:9200
+    networks:
+      - netApplication
+    volumes:
+      - elasticsearchStorage:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl http://localhost:9200/_cluster/health?pretty"]
+      interval: 30s
+      timeout: 30s
+      retries: 3
+
+  kibana:
+    container_name: 'kibana'
+    image: 'kibana:8.5.3'
+    ports:
+      - 5601:5601
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    networks:
+      - netApplication
+
 volumes:
   mongoData1:
   mongoLog1:
   mongoConfig1:
   rabbitmqData:
   grafanaStorage:
+  elasticsearchStorage:
 
 
 networks:

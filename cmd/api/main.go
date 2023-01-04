@@ -45,6 +45,7 @@ import (
 	"github.com/gin-contrib/sessions/mongo/mongodriver"
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/rabbitmq/amqp091-go"
 	rabbitmq "github.com/wagslane/go-rabbitmq"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -61,6 +62,8 @@ func init() {
 }
 
 func main() {
+
+	gin.DisableConsoleColor()
 
 	// Create context that listens for the interrupt signal from the OS.
 	ctxSignal, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -91,7 +94,9 @@ func main() {
 	rabbitmqLoggger := log.New(log.Writer(), "[RABBITMQ] ", log.LstdFlags|log.Lmsgprefix)
 	publisher, err := rabbitmq.NewPublisher(
 		os.Getenv("RABBITMQ_URI"),
-		rabbitmq.Config{},
+		rabbitmq.Config{
+			Dial: amqp091.DefaultDial(30*time.Second),
+		},
 		rabbitmq.WithPublisherOptionsLogger(rabbitmqLog.NewLogger(rabbitmqLoggger, rabbitmqLoggger)),
 	)
 	if err != nil {
