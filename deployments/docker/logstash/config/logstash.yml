@@ -2,3 +2,4 @@ http.host: 0.0.0.0
 queue.type: memory
 xpack.monitoring.elasticsearch.hosts:
 - http://elasticsearch:9200
+xpack.monitoring.enabled: true

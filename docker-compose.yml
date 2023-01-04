@@ -112,6 +112,13 @@ services:
     depends_on:
       - elasticsearch
 
+  filebeat:
+    extends:
+      file: ./deployments/docker/common.yml
+      service: filebeat
+    depends_on:
+      - elasticsearch
+
 volumes:
   mongoData1:
   mongoLog1:

@@ -126,7 +126,7 @@ services:
       - ./logstash/pipeline/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
       - ./logstash/config/jvm.options:/usr/share/logstash/config/jvm.options:ro
       - ./logstash/config/log4j2.properties:/usr/share/logstash/config/log4j2.properties:ro
-      - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+      - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
       - ./logstash/config/pipelines.yml:/usr/share/logstash/config/pipelines.yml:ro
       - ./logstash/config/startup.options:/usr/share/logstash/config/startup.options:ro
     networks:
@@ -161,6 +161,16 @@ services:
       - 5601:5601
     environment:
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    networks:
+      - netApplication
+
+  filebeat:
+    container_name: 'filebeat'
+    image: docker.elastic.co/beats/filebeat:8.5.3
+    volumes:
+      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml
+      - ./../debug.log:/var/log/api/debug.log
+      - ./filebeat/docker-entrypoint-initdb.d/filebeat.sh:/docker-entrypoint-initdb.d/filebeat.sh
     networks:
       - netApplication
 
