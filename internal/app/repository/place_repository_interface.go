@@ -4,6 +4,7 @@ import (
 	"walk_backend/internal/app/model"
 )
 
+// PlaceRepositoryInterface ...
 type PlaceRepositoryInterface interface {
 	Find(id model.ID) (*model.Place, error)
 	FindAll() (model.PlaceList, error)

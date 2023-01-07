@@ -4,7 +4,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func RequestAbsUrl() gin.HandlerFunc {
+// RequestAbsURL make request abs UTL
+func RequestAbsURL() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		defer c.Next()
 		if c.Request.URL.IsAbs() {

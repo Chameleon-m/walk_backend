@@ -39,11 +39,13 @@ import (
 	"walk_backend/internal/app/api/presenter"
 	"walk_backend/internal/app/repository"
 	"walk_backend/internal/app/service"
-	rabbitmqLog "walk_backend/internal/pkg/go_rabbitmq"
+	rabbitmqLog "walk_backend/internal/pkg/rabbitmqcustom"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/mongo/mongodriver"
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/rabbitmq/amqp091-go"
 	rabbitmq "github.com/wagslane/go-rabbitmq"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -60,6 +62,8 @@ func init() {
 }
 
 func main() {
+
+	gin.DisableConsoleColor()
 
 	// Create context that listens for the interrupt signal from the OS.
 	ctxSignal, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -90,7 +94,9 @@ func main() {
 	rabbitmqLoggger := log.New(log.Writer(), "[RABBITMQ] ", log.LstdFlags|log.Lmsgprefix)
 	publisher, err := rabbitmq.NewPublisher(
 		os.Getenv("RABBITMQ_URI"),
-		rabbitmq.Config{},
+		rabbitmq.Config{
+			Dial: amqp091.DefaultDial(30*time.Second),
+		},
 		rabbitmq.WithPublisherOptionsLogger(rabbitmqLog.NewLogger(rabbitmqLoggger, rabbitmqLoggger)),
 	)
 	if err != nil {
@@ -162,8 +168,9 @@ func main() {
 	// router.UseH2C = true
 
 	// common midelleware
+	router.Use(middleware.Prometheus())
 	router.Use(middleware.Cors(siteSchema, siteHost, sitePort))
-	router.Use(middleware.RequestAbsUrl())
+	router.Use(middleware.RequestAbsURL())
 
 	// routes for version 1
 	apiV1 := router.Group("/v1")
@@ -182,6 +189,7 @@ func main() {
 	categoriesHandler.MakeHandlers(apiV1, apiV1auth)
 
 	router.GET("/version", VersionHandler)
+	router.GET("/prometheus", gin.WrapH(promhttp.Handler()))
 
 	// build server
 	srv := &http.Server{
@@ -228,6 +236,7 @@ func main() {
 	log.Println("Server exiting")
 }
 
+// VersionHandler api version
 func VersionHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"version": os.Getenv("API_VERSION")})
 }

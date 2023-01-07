@@ -4,6 +4,7 @@ import (
 	"time"
 )
 
+// NewPlaceModel create new place model
 func NewPlaceModel(id ID, name string, nameSlug string, description string, category ID, tags []string) (*Place, error) {
 	place := &Place{
 		ID:          id,
@@ -19,6 +20,8 @@ func NewPlaceModel(id ID, name string, nameSlug string, description string, cate
 	return place, nil
 }
 
+// Place ...
+//
 // swagger:parameters places newPlace
 type Place struct {
 	// swagger:ignore
@@ -38,8 +41,10 @@ type Place struct {
 	DeletedAt time.Time `bson:"deletedAt,omitempty"`
 }
 
+// PlaceList ...
 type PlaceList []*Place
 
+// Validate calidate place model
 func (m *Place) Validate() error {
 
 	if m.Name == "" || m.NameSlug == "" {

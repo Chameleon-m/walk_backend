@@ -4,6 +4,7 @@ import (
 	"walk_backend/internal/app/model"
 )
 
+// CategoryRepositoryInterface ...
 type CategoryRepositoryInterface interface {
 	Find(id model.ID) (*model.Category, error)
 	FindAll() (model.CategoryList, error)

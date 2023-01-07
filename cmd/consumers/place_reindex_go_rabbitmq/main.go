@@ -13,7 +13,7 @@ import (
 	"walk_backend/internal/app/model"
 	"walk_backend/internal/app/repository"
 	"walk_backend/internal/app/service"
-	rabbitmqLog "walk_backend/internal/pkg/go_rabbitmq"
+	rabbitmqLog "walk_backend/internal/pkg/rabbitmqcustom"
 
 	rabbitmq "github.com/wagslane/go-rabbitmq"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -24,8 +24,8 @@ import (
 var (
 	prefetchCount  = flag.Int("prefetch-count", 0, "Qos prefetch count")
 	reconnectDelay = flag.Duration("reconnect-delay", 5*time.Second, "Reconnect delay")
-	ErrLog         = log.New(os.Stderr, "[ERROR] ", log.LstdFlags|log.Lmsgprefix)
-	Log            = log.New(os.Stdout, "[INFO] ", log.LstdFlags|log.Lmsgprefix)
+	errLog         = log.New(os.Stderr, "[ERROR] ", log.LstdFlags|log.Lmsgprefix)
+	infLog         = log.New(os.Stdout, "[INFO] ", log.LstdFlags|log.Lmsgprefix)
 )
 
 func init() {
@@ -41,13 +41,13 @@ func main() {
 	// ENV
 	workersCount, err := strconv.Atoi(os.Getenv("RABBITMQ_CONSUMERS_PLACE_REINDEX_COUNT"))
 	if err != nil {
-		ErrLog.Fatalf("ENV RABBITMQ_CONSUMERS_PLACE_REINDEX_COUNT: %s", err)
+		errLog.Fatalf("ENV RABBITMQ_CONSUMERS_PLACE_REINDEX_COUNT: %s", err)
 	}
 
-	mongoUri := os.Getenv("MONGO_URI")
+	mongoURI := os.Getenv("MONGO_URI")
 	mongoDB := os.Getenv("MONGO_INITDB_DATABASE")
 
-	rabbitmqUrl := os.Getenv("RABBITMQ_URI")
+	rabbitmqURL := os.Getenv("RABBITMQ_URI")
 	consumerTag := os.Getenv("RABBITMQ_CONSUMERS_PLACE_REINDEX_TAG")
 	exchange := os.Getenv("RABBITMQ_EXCHANGE_REINDEX")
 	exchangeType := os.Getenv("RABBITMQ_EXCHANGE_TYPE")
@@ -57,46 +57,46 @@ func main() {
 	// DB
 	ctxMongo, cancel := context.WithCancel(ctxSignal)
 	defer cancel()
-	mongoClient, err := mongo.Connect(ctxMongo, options.Client().ApplyURI(mongoUri))
+	mongoClient, err := mongo.Connect(ctxMongo, options.Client().ApplyURI(mongoURI))
 	if err != nil {
-		ErrLog.Fatal(err)
+		errLog.Fatal(err)
 	}
 	defer func() {
 		if err = mongoClient.Disconnect(ctxMongo); err != nil {
-			ErrLog.Printf("error disconect client : %s\n", err)
+			errLog.Printf("error disconect client : %s\n", err)
 		}
 	}()
 	if err = mongoClient.Ping(ctxMongo, readpref.Primary()); err != nil {
-		ErrLog.Fatal(err)
+		errLog.Fatal(err)
 	}
-	Log.Println("connected to MongoDB")
+	infLog.Println("connected to MongoDB")
 
 	// Consumer configuration
 	consumer, err := rabbitmq.NewConsumer(
-		rabbitmqUrl,
+		rabbitmqURL,
 		rabbitmq.Config{},
-		rabbitmq.WithConsumerOptionsLogger(rabbitmqLog.NewLogger(Log, ErrLog)),
+		rabbitmq.WithConsumerOptionsLogger(rabbitmqLog.NewLogger(infLog, errLog)),
 		rabbitmq.WithConsumerOptionsReconnectInterval(*reconnectDelay),
 	)
 	if err != nil {
-		ErrLog.Fatal(err)
+		errLog.Fatal(err)
 	}
 	defer consumer.Close()
 
 	publisher, err := rabbitmq.NewPublisher(
-		rabbitmqUrl,
+		rabbitmqURL,
 		rabbitmq.Config{},
 		rabbitmq.WithPublisherOptionsLogging,
 	)
 	if err != nil {
-		ErrLog.Fatal(err)
+		errLog.Fatal(err)
 	}
 	defer publisher.Close()
 
 	notifyReturn := publisher.NotifyReturn()
 	notifyPublish := publisher.NotifyPublish()
 
-	Log.Println("Connected to RabbitMQ")
+	infLog.Println("Connected to RabbitMQ")
 
 	ctx, cancel := context.WithCancel(ctxSignal)
 	defer cancel()
@@ -132,23 +132,23 @@ func main() {
 			// Consumer == Handler // !command Command->execute(dto DTO): bool | analog service with NewService(ctx,...)
 			id, err := model.StringToID(string(d.Body))
 			if err != nil {
-				ErrLog.Printf("error string to id: %s", err)
+				errLog.Printf("error string to id: %s", err)
 				return rabbitmq.NackRequeue
 			}
 
-			Log.Printf("received a place id: %s", id)
+			infLog.Printf("received a place id: %s", id)
 
 			place, err := placeService.Find(id)
 			if err != nil {
 				if !d.Redelivered {
-					ErrLog.Printf("error Find place with id: %s, discard", id)
+					errLog.Printf("error Find place with id: %s, discard", id)
 					return rabbitmq.NackDiscard
 				}
-				ErrLog.Printf("error Find place with id: %s", id)
+				errLog.Printf("error Find place with id: %s", id)
 				return rabbitmq.NackRequeue
 			}
 
-			Log.Printf("TODO send to elastic: %s", place.ID)
+			infLog.Printf("TODO send to elastic: %s", place.ID)
 			return rabbitmq.Ack
 		},
 
@@ -164,11 +164,11 @@ func main() {
 		rabbitmq.WithConsumeOptionsQOSPrefetch(*prefetchCount),
 	)
 	if err != nil {
-		ErrLog.Fatal(err)
+		errLog.Fatal(err)
 	}
 
 	// Awaiting done chan
 	<-done
 
-	Log.Printf("consumer %s exiting", consumerTag)
+	infLog.Printf("consumer %s exiting", consumerTag)
 }

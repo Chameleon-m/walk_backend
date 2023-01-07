@@ -10,10 +10,12 @@ import (
 	rabbitmq "github.com/wagslane/go-rabbitmq"
 )
 
+// NotifyReturnError ...
 type NotifyReturnError struct {
 	ReturnNotify rabbitmq.Return
 }
 
+// Error ...
 func (e *NotifyReturnError) Error() string {
 	return fmt.Sprintf(
 		"publish %s return ReplyCode %d, ReplyText %s, Exchange %s, RoutingKey %s",
@@ -25,10 +27,12 @@ func (e *NotifyReturnError) Error() string {
 	)
 }
 
+// NotifyPublishError ...
 type NotifyPublishError struct {
 	ConfirmNotify rabbitmq.Confirmation
 }
 
+// Error ...
 func (e *NotifyPublishError) Error() string {
 	return fmt.Sprintf(
 		"publish %d is not ack, reconnection: %d",
@@ -37,7 +41,7 @@ func (e *NotifyPublishError) Error() string {
 	)
 }
 
-// PlaceQueueRabbitRepository place mongodb repo
+// PlaceQueueRabbitRepository place queue repository
 type PlaceQueueRabbitRepository struct {
 	publisher     *rabbitmq.Publisher
 	notifyReturn  <-chan rabbitmq.Return
@@ -46,6 +50,7 @@ type PlaceQueueRabbitRepository struct {
 
 var _ PlaceQueueRepositoryInterface = (*PlaceQueueRabbitRepository)(nil)
 
+// NewPlaceQueueRabbitRepository create new queue rabbitmq repository
 func NewPlaceQueueRabbitRepository(
 	publisher *rabbitmq.Publisher,
 	notifyReturn <-chan rabbitmq.Return,
@@ -58,6 +63,7 @@ func NewPlaceQueueRabbitRepository(
 	}
 }
 
+// PublishReIndex publish re index
 func (r *PlaceQueueRabbitRepository) PublishReIndex(id model.ID) error {
 
 	correlationID, err := uuid.NewV7()

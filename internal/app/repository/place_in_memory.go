@@ -6,6 +6,7 @@ import (
 	"walk_backend/internal/app/model"
 )
 
+// PlaceInMemoryRepository ...
 type PlaceInMemoryRepository struct {
 	lock   sync.RWMutex
 	Places model.PlaceList
@@ -13,6 +14,7 @@ type PlaceInMemoryRepository struct {
 
 var _ PlaceRepositoryInterface = (*PlaceInMemoryRepository)(nil)
 
+// NewPlaceInMemoryRepository create new place memory repository
 func NewPlaceInMemoryRepository() *PlaceInMemoryRepository {
 	var places = model.PlaceList{}
 	return &PlaceInMemoryRepository{
@@ -20,6 +22,7 @@ func NewPlaceInMemoryRepository() *PlaceInMemoryRepository {
 	}
 }
 
+// Find ...
 func (r *PlaceInMemoryRepository) Find(id model.ID) (*model.Place, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
@@ -33,10 +36,12 @@ func (r *PlaceInMemoryRepository) Find(id model.ID) (*model.Place, error) {
 	return nil, model.ErrModelNotFound
 }
 
+// FindAll ...
 func (r *PlaceInMemoryRepository) FindAll() (model.PlaceList, error) {
 	return r.Places, nil
 }
 
+// Create ...
 func (r *PlaceInMemoryRepository) Create(m *model.Place) (model.ID, error) {
 	if m.ID.IsNil() {
 		id, err := model.NewID()
@@ -54,6 +59,7 @@ func (r *PlaceInMemoryRepository) Create(m *model.Place) (model.ID, error) {
 	return m.ID, nil
 }
 
+// Update ...
 func (r *PlaceInMemoryRepository) Update(m *model.Place) error {
 
 	r.lock.Lock()
@@ -70,6 +76,7 @@ func (r *PlaceInMemoryRepository) Update(m *model.Place) error {
 	return model.ErrModelNotFound
 }
 
+// Delete ...
 func (r *PlaceInMemoryRepository) Delete(id model.ID) error {
 
 	r.lock.Lock()
@@ -85,6 +92,7 @@ func (r *PlaceInMemoryRepository) Delete(id model.ID) error {
 	return model.ErrModelNotFound
 }
 
+// Search ...
 func (r *PlaceInMemoryRepository) Search(search string) (model.PlaceList, error) {
 	panic("need implement")
 }

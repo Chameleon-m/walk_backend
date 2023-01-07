@@ -5,8 +5,11 @@ import (
 )
 
 var (
+	// ErrInvalidString ...
 	ErrInvalidString = errors.New("The provided string is not a valid ID")
+	// ErrModelNotFound ...
 	ErrModelNotFound = errors.New("Model not found")
+	// ErrModelUpdate ...
 	ErrModelUpdate   = errors.New("No upsert was done")
 )
 
