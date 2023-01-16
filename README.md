@@ -23,6 +23,12 @@ export SITE_SCHEMA=https
 export SITE_HOST=localhost
 export SITE_PORT=443
 
+# API # HOST host.docker.internal or api or ip
+API_VERSION=0.0.1
+API_SCHEMA=http
+API_HOST=api
+API_PORT=8080
+
 # GIN
 export PORT=8080
 export GIN_MODE=debug
@@ -30,7 +36,7 @@ export GIN_MODE=debug
 # SESSION
 export SESSION_SECRET=59ce2f5dc5a3f211c6f9fffb19d7cc18c098ac19645df22585c20d19477f14ae
 export SESSION_NAME=session_name
-export SESSION_PATH=/v1/auth
+export SESSION_PATH=/api/v1/auth
 export SESSION_DOMAIN=.localhost
 export SESSION_MAX_AGE=3600
 
@@ -41,6 +47,15 @@ export RABBITMQ_DEFAULT_PASSWORD=guest
 export RABBITMQ_EXCHANGE_REINDEX=reindex_exchange
 export RABBITMQ_ROUTING_PLACE_KEY=place_routing_key
 export RABBITMQ_QUEUE_PLACE_REINDEX=place_reindex_queue
+
+# REDIS
+REDIS_HOST: redis
+REDIS_PORT: 6379
+REDIS_PASSWORD:
+
+#KIBANA
+KIBANA_HOST=kibana:5601
+ELASTICSEARCH_HOSTS=elasticsearch:9200
 ```
 # DB
 

@@ -1,0 +1,3 @@
+upstream api-upstream {
+    server ${API_HOST}:${API_PORT};
+}

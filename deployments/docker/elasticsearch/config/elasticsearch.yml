@@ -1,0 +1,19 @@
+# https://discuss.elastic.co/t/elasticsearch-couldnt-connect-to-any-of-the-configured-elasticsearch-hosts-connection-refused/211860
+
+network.host: 0.0.0.0
+http.port: 9200
+
+node.name: "es01"
+
+discovery.type: single-node
+# discovery.seed_hosts: ["host1"]
+
+cluster.name: "docker-cluster"
+# cluster.initial_master_nodes: ["es01"]
+
+path.data: /usr/share/elasticsearch/data
+path.logs: /usr/share/elasticsearch/logs
+
+xpack.security.enabled: false
+
+bootstrap.memory_lock: true

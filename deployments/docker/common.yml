@@ -23,6 +23,7 @@ services:
     image: 'rabbitmq:3-management'
     ports:
      - 15672:15672
+     - 15692:15692
      - 5672:5672
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-guest}
@@ -71,9 +72,8 @@ services:
     networks:
       - netApplication
     volumes:
-      - mongoData1:/data/db
-      - mongoLog1:/var/log/mongodb
-      - mongoConfig1:/data/configdb
+      - mongoData:/data/db
+      - mongoConfig:/data/configdb
       - ./mongodb/mongod.conf:/etc/mongod.conf
       - ./mongodb/file.key:/auth/file.key
       - ./mongodb/docker-entrypoint-initdb.d/usercreate.sh:/docker-entrypoint-initdb.d/usercreate.sh
@@ -92,38 +92,63 @@ services:
       MONGO_INITDB_PASSWORD: ${MONGO_INITDB_PASSWORD}
       MONGO_REPLICA_SET_NAME: ${MONGO_REPLICA_SET_NAME}
 
+  redis:
+    container_name: 'redis'
+    image: 'redis:7.0.7'
+    ports:
+      - 6379:6379
+    volumes:
+      - redisData:/data
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+    healthcheck:
+      test: redis-cli ping | grep PONG
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - netApplication
+
   prometheus:
     container_name: 'prometheus'
-    image: 'prom/prometheus:latest'
-    # volumes:
+    image: 'prom/prometheus:v2.41.0'
+    volumes:
+      - prometheusData:/prometheus
     #   - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - 9090:9090
-    restart: always
+    networks:
+      - netApplication
+
+  telegraf:
+    container_name: 'telegraf'
+    image: 'telegraf:1.25.0'
+    volumes:
+      - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf
+    ports:
+      - 9100:9100
     networks:
       - netApplication
 
   grafana:
     container_name: 'grafana'
-    image: 'grafana/grafana:latest'
+    image: 'grafana/grafana:9.3.2'
     volumes:
-      - grafanaStorage:/var/lib/grafana
+      - grafanaData:/var/lib/grafana
+      - ./grafana/conf/defaults.ini:/usr/share/grafana/conf/defaults.ini
+      - ./grafana/grafana.ini:/etc/grafana/grafana.ini
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/alerting:/etc/grafana/provisioning/alerting
     ports:
       - 3000:3000
-    restart: always
     networks:
       - netApplication
 
-# RUN rm -f /usr/share/logstash/pipeline/logstash.conf
-# /usr/share/logstash/config/log4j2.properties
-# https://www.elastic.co/guide/en/logstash/current/config-setting-files.html#settings-files
-# https://www.elastic.co/guide/en/logstash/current/docker-config.html#_logging_configuration
   logstash:
     container_name: 'logstash'
     image: 'logstash:8.5.3'
-    # command: logstash -f /etc/logstash/logstash.conf
     volumes:
-      - ./logstash/pipeline/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+      - logstashData:/usr/share/logstash/data
       - ./logstash/config/jvm.options:/usr/share/logstash/config/jvm.options:ro
       - ./logstash/config/log4j2.properties:/usr/share/logstash/config/log4j2.properties:ro
       - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
@@ -135,9 +160,6 @@ services:
       - "5000:5000"
       - "12201:12201"
       - "12201:12201/udp"
-    environment:
-      QUEUE_TYPE: memory
-      # QUEUE_TYPE: persisted
 
   elasticsearch:
     container_name: 'elasticsearch'
@@ -147,7 +169,10 @@ services:
     networks:
       - netApplication
     volumes:
-      - elasticsearchStorage:/usr/share/elasticsearch/data
+      - elasticsearchData:/usr/share/elasticsearch/data
+      - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
+      - ./elasticsearch/config/jvm.options:/usr/share/elasticsearch/config/jvm.options:ro
+      - ./elasticsearch/config/log4j2.properties:/usr/share/elasticsearch/config/log4j2.properties:ro
     healthcheck:
       test: ["CMD-SHELL", "curl http://localhost:9200/_cluster/health?pretty"]
       interval: 30s
@@ -160,29 +185,47 @@ services:
     ports:
       - 5601:5601
     environment:
-      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+      ELASTICSEARCH_HOSTS: ${ELASTICSEARCH_HOSTS}
     networks:
       - netApplication
+    volumes:
+      - ./kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml:ro
+      - ./kibana/config/node.options:/usr/share/kibana/config/node.options:ro
 
   filebeat:
     container_name: 'filebeat'
     image: docker.elastic.co/beats/filebeat:8.5.3
     volumes:
-      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml
-      - ./../debug.log:/var/log/api/debug.log
-      - ./filebeat/docker-entrypoint-initdb.d/filebeat.sh:/docker-entrypoint-initdb.d/filebeat.sh
+      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - filebeatData:/usr/share/filebeat/data
+    entrypoint: "filebeat -e -strict.perms=false -c /usr/share/filebeat/filebeat.yml"
+    environment:
+      OUTPUT_ELASTICSEARCH_HOSTS: ${ELASTICSEARCH_HOSTS}
+      KIBANA_HOST: ${KIBANA_HOST}
+      API_VERSION: ${API_VERSION}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_PASSWORD: ''
     networks:
       - netApplication
 
 volumes:
-  mongoData1:
-  mongoLog1:
-  mongoConfig1:
+  mongoData:
+  mongoLogs:
+  mongoConfig:
   rabbitmqData:
-  grafanaStorage:
-  elasticsearchStorage:
-
-
+  grafanaData:
+  elasticsearchData:
+  logstashData:
+  redisData:
+  redisLogs:
+  filebeatData:
+  filebeatLogs:
+  apiLogs:
+  nginxLogs:
+  kibanaLogs:
+  prometheusData:
+  
 networks:
   netApplication:
     name: netApplication
