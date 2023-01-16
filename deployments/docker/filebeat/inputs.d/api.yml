@@ -1,0 +1,17 @@
+# https://www.elastic.co/guide/en/beats/filebeat/current/filebeat-input-filestream.html
+- type: filestream
+  id: app-api-debug-log-filestream
+  paths:
+    - /var/log/api/debug.log
+  tags: ['${API_VERSION}']
+  # fields:
+  #   app: api
+  # include_lines: ['^ERR', '^WARN']
+
+# https://www.elastic.co/guide/en/beats/filebeat/current/filebeat-input-udp.html
+# - type: udp
+#   id: app-api-log-udp
+#   max_message_size: 10KiB
+#   host: "localhost:5701"
+#   fields:
+#     app: api

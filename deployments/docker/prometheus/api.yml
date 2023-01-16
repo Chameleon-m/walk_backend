@@ -5,9 +5,22 @@ global:
 scrape_configs:
   - job_name: prometheus
     static_configs:
-      - targets: ['prometheus:9090']
+      - targets:
+        - localhost:9090
   - job_name: app-api 
     metrics_path: /prometheus
     static_configs:
+      - targets: 
+        - ${API_HOST}:${API_PORT}
+        # - api:8080 # host.docker.internal:8080
+  - job_name: rabbitmq
+    metrics_path: /metrics
+    static_configs:
       - targets:
-        - api:8080
+        - rabbitmq:15692
+  - job_name: telegraf
+    scrape_interval: 15s
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+        - telegraf:9100

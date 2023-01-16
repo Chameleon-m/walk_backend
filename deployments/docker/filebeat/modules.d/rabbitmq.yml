@@ -1,0 +1,4 @@
+- module: rabbitmq
+  log:
+    enabled: true
+    var.paths: ["/var/log/rabbitmq/rabbit.log"]

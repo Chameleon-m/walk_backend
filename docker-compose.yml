@@ -2,24 +2,37 @@ version: '3.9'
 
 services:
 
-  nginx:
-    extends:
-      file: ./deployments/docker/common.yml
-      service: nginx
-    volumes:
-      - ./deployments/docker/nginx/conf.d/api.conf:/etc/nginx/conf.d/api.conf:ro
-    depends_on:
-      - api
+  # nginx:
+  #   extends:
+  #     file: ./deployments/docker/common.yml
+  #     service: nginx
+  #   volumes:
+  #     - ./deployments/docker/nginx/templates/api-upstream.conf.template:/etc/nginx/templates/api-upstream.conf.template:ro
+  #     - ./deployments/docker/nginx/conf.d/api.conf:/etc/nginx/conf.d/api.conf:ro
+  #     - nginxLogs:/var/log/nginx
+  #   environment:
+  #     API_VERSION: ${API_VERSION}
+  #     API_SCHEMA: ${API_SCHEMA}
+  #     API_HOST: ${API_HOST}
+  #     API_PORT: ${API_PORT}
+  #   depends_on:
+  #     - api
 
   rabbitmq:
     extends:
       file: ./deployments/docker/common.yml
       service: rabbitmq
+    volumes:
+      - rabbitmqLogs:/var/log/rabbitmq
+    environment:
+      API_VERSION: ${API_VERSION}
 
   mongo-replica-setup:
     extends:
       file: ./deployments/docker/common.yml
       service: mongo-replica-setup
+    environment:
+      API_VERSION: ${API_VERSION}
     depends_on:
       mongo1:
         condition: service_healthy
@@ -28,41 +41,71 @@ services:
     extends:
       file: ./deployments/docker/common.yml
       service: mongo1
+    volumes:
+      - mongoLogs:/var/log/mongodb
+    environment:
+      API_VERSION: ${API_VERSION}
+
+  redis:
+    extends:
+      file: ./deployments/docker/common.yml
+      service: redis
+    environment:
+      API_VERSION: ${API_VERSION}
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://localhost:12201"
+        tag: "redis-docker"
 
   api:
     extends:
       file: ./deployments/docker/api/docker-compose.yml
       service: api
-    restart: always
+    volumes:
+      - ./deployments/docker/nginx/conf.d/api.conf:/etc/nginx/conf.d/api.conf:ro
+      - ./debug.log:/root/debug.log
     depends_on:
       rabbitmq:
         condition: service_healthy
       mongo1:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     external_links:
       - mongo1
       - rabbitmq
       - logstash
+      - redis
     logging:
       driver: gelf
       options:
         gelf-address: "udp://localhost:12201"
-        tag: "app-api"
+        tag: "api-docker"
+        labels: "api"
+        env: "API_VERSION"
 
   place_reindex_go_rabbitmq:
     extends:
       file: ./deployments/docker/consumers/place_reindex_go_rabbitmq/docker-compose.yml
       service: place_reindex_go_rabbitmq
-    restart: always
     depends_on:
       rabbitmq:
         condition: service_healthy
       mongo1:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     external_links:
       - mongo1
       - rabbitmq
       - logstash
+      - redis
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://localhost:12201"
+        tag: "place_reindex_go_rabbitmq-docker"
 
   prometheus:
     extends:
@@ -70,62 +113,142 @@ services:
       service: prometheus
     volumes:
       - ./deployments/docker/prometheus/api.yml:/etc/prometheus/prometheus.yml:ro
+    environment:
+      API_VERSION: ${API_VERSION}
+      API_SCHEMA: ${API_SCHEMA}
+      API_HOST: ${API_HOST}
+      API_PORT: ${API_PORT}
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://localhost:12201"
+        tag: "prometheus-docker"
+
+  telegraf:
+    extends:
+      file: ./deployments/docker/common.yml
+      service: telegraf
+    environment:
+      API_VERSION: ${API_VERSION}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock # Linux
+      - //var/run/docker.sock:/var/run/docker.sock # Windows WSL 2 engine
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://localhost:12201"
+        tag: "telegraf-docker"
 
   grafana:
     extends:
       file: ./deployments/docker/common.yml
       service: grafana
+    volumes:
+      - grafanaLogs:/var/log/grafana
+    environment:
+      API_VERSION: ${API_VERSION}
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://localhost:12201"
+        tag: "grafana-docker"
 
-# cat /var/log/syslog | nc -q0 localhost 5000
   logstash:
     extends:
       file: ./deployments/docker/common.yml
       service: logstash
     volumes:
-      - ./logstash/pipeline/api.conf:/usr/share/logstash/pipeline/api.conf:ro
+      - ./deployments/docker/logstash/pipeline/api.conf:/usr/share/logstash/pipeline/api.conf:ro
+      - ./deployments/docker/logstash/pipeline/api-docker.conf:/usr/share/logstash/pipeline/api-docker.conf:ro
+      - ./deployments/docker/logstash/pipeline/local-file.conf:/usr/share/logstash/pipeline/local-file.conf:ro
+      - logstashLogs:/usr/share/logstash/logs
     environment:
-      XPACK_MONITORING_ENABLED: "true"
+      API_VERSION: ${API_VERSION}
+      # QUEUE_TYPE: persisted
 
-# /usr/share/elasticsearch/logs/docker-cluster.log
   elasticsearch:
     extends:
       file: ./deployments/docker/common.yml
       service: elasticsearch
+    volumes:
+      - elasticsearchLogs:/usr/share/elasticsearch/logs
     environment:
+      API_VERSION: ${API_VERSION}
       node.name: es01
       cluster.name: docker-cluster
       discovery.type: single-node
       xpack.security.enabled: "false"
-      bootstrap.memory_lock: "true"
-      ES_JAVA_OPTS: -Xms512m -Xmx512m
-      # ES_JAVA_OPTS: -Xms512m -Xmx512m --enable-preview
-    mem_limit: 1073741824
-    # ulimits:
-    #   memlock:
-    #     soft: -1
-    #     hard: -1
+      ES_JAVA_OPTS: -Xms512m -Xmx512m --enable-preview
+    # deploy:
+    #   # mode: replicated
+    #   # replicas: 1
+    #   resources:
+    #     limits:
+    #       cpus: '1.00'
+    #       memory: 1024M
+    #       pids: 1
+    #     reservations:
+    #       cpus: '0.5'
+    #       memory: 512M
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
 
   kibana:
     extends:
       file: ./deployments/docker/common.yml
       service: kibana
+    volumes:
+      - kibanaLogs:/usr/share/kibana/logs
+    environment:
+      API_VERSION: ${API_VERSION}
     depends_on:
-      - elasticsearch
+      elasticsearch:
+        condition: service_healthy
 
-  filebeat:
+  filebeat-api:
     extends:
       file: ./deployments/docker/common.yml
       service: filebeat
+    volumes:
+      - ./debug.log:/var/log/api/debug.log
+      - filebeatLogs:/usr/share/filebeat/logs/
+      - nginxLogs:/var/log/nginx/
+      - mongoLogs:/var/log/mongodb/
+      - rabbitmqLogs:/var/log/rabbitmq/
+      - logstashLogs:/var/log/logstash/
+      - redisLogs:/var/log/redis/
+      - elasticsearchLogs:/var/log/elasticsearch/
+      - kibanaLogs:/var/log/kibana/
+      - ./deployments/docker/filebeat/inputs.d/api.yml:/usr/share/filebeat/inputs.d/api.yml
+      - ./deployments/docker/filebeat/modules.d/nginx.yml:/usr/share/filebeat/modules.d/nginx.yml
+      - ./deployments/docker/filebeat/modules.d/rabbitmq.yml:/usr/share/filebeat/modules.d/rabbitmq.yml
     depends_on:
-      - elasticsearch
+      elasticsearch:
+        condition: service_healthy
 
 volumes:
-  mongoData1:
-  mongoLog1:
-  mongoConfig1:
+  mongoData:
+  mongoLogs:
+  mongoConfig:
   rabbitmqData:
-  grafanaStorage:
-  elasticsearchStorage:
+  rabbitmqLogs:
+  grafanaData:
+  grafanaLogs:
+  elasticsearchData:
+  elasticsearchLogs:
+  logstashData:
+  logstashLogs:
+  redisData:
+  redisLogs:
+  filebeatData:
+  filebeatLogs:
+  apiLogs:
+  nginxLogs:
+    name: nginxLogs
+  kibanaLogs:
+  prometheusData:
 
 networks:
   netApplication:

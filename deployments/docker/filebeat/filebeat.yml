@@ -1,21 +1,24 @@
 # /etc/filebeat/filebeat.yml
-filebeat.inputs:
-- type: log
-  paths:
-    - /var/log/api/debug.log
-output.elasticsearch:
-  hosts: ['http://elasticsearch:9200']
-  # username: "elastic"
-  # password: "<password>"
-  # If using Elasticsearch's default certificate
-  # ssl.ca_trusted_fingerprint: "<es cert fingerprint>"
-# setup.kibana:
-#   host: "kibana:5601"
+# https://www.elastic.co/guide/en/beats/filebeat/current/filebeat-reference-yml.html
 
-# filebeat.config:
-#   modules:
-#     path: ${path.config}/modules.d/*.yml
-#     reload.enabled: false
+# https://www.elastic.co/guide/en/beats/filebeat/current/filebeat-configuration-reloading.html#load-input-config
+filebeat.config.inputs:
+    enabled: true
+    path: ${path.config}/inputs.d/*.yml
+    reload.enabled: true
+    reload.period: 10s
+filebeat.config.modules:
+    enabled: true
+    path: ${path.config}/modules.d/*.yml
+    reload.enabled: true
+    reload.period: 10s
+
+# https://www.elastic.co/guide/en/beats/filebeat/current/configuring-output.html
+output.elasticsearch:
+  hosts: ["${ELASTICSEARCH_HOSTS:http://elasticsearch:9200}"]
+
+# https://www.elastic.co/guide/en/beats/filebeat/current/setup-kibana-endpoint.html
+setup.kibana.host: "${KIBANA_HOST:http://kibana:5601}"
 
 # filebeat.autodiscover:
 #   providers:
@@ -24,8 +27,3 @@ output.elasticsearch:
 
 # processors:
 # - add_cloud_metadata: ~
-
-# output.elasticsearch:
-#   hosts: '${ELASTICSEARCH_HOSTS:elasticsearch:9200}'
-#   username: '${ELASTICSEARCH_USERNAME:}'
-#   password: '${ELASTICSEARCH_PASSWORD:}'

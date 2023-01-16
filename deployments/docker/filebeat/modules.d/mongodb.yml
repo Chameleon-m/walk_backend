@@ -1,0 +1,14 @@
+# https://www.elastic.co/guide/en/beats/filebeat/current/filebeat-reference-yml.html
+#------------------------------- Mongodb Module -------------------------------
+- module: mongodb
+  # Logs
+  log:
+    enabled: true
+
+    # Set custom paths for the log files. If left empty,
+    # Filebeat will choose the paths depending on your OS.
+    var.paths:  ["/var/log/mongodb/mongod.log*"]
+
+    # Input configuration (advanced). Any input configuration option
+    # can be added under this section.
+    #input:

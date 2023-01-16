@@ -12,6 +12,7 @@ migrations/
 .git/
 .gitignore
 debug.log
-docker-compose-dev.yml
+docker-compose.dev.yml
+docker-compose.prod.yml
 docker-compose.yml
 README.md

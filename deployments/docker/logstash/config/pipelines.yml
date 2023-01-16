@@ -2,5 +2,15 @@
 # For more information on multiple pipelines, see the documentation:
 #   https://www.elastic.co/guide/en/logstash/current/multiple-pipelines.html
 
-- pipeline.id: main
-  path.config: "/usr/share/logstash/pipeline"
+- pipeline.id: api
+  path.config: "/usr/share/logstash/pipeline/api.conf"
+  pipeline.workers: 1
+
+- pipeline.id: api-docker
+  path.config: "/usr/share/logstash/pipeline/api-docker.conf"
+  pipeline.workers: 1
+  #queue.type: persisted
+
+- pipeline.id: logstash-docker
+  path.config: "/usr/share/logstash/pipeline/local-file.conf"
+  pipeline.workers: 1

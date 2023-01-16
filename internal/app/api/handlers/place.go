@@ -15,7 +15,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-// PlacesHandler ... 
+// PlacesHandler ...
 type PlacesHandler struct {
 	service   service.PlaceServiceInteface
 	ctx       context.Context
@@ -91,7 +91,7 @@ func (handler *PlacesHandler) NewPlaceHandler(c *gin.Context) {
 		return
 	}
 
-	c.Header("Location", makeURL(c.Request, "/v1/places/"+id.String()))
+	c.Header("Location", makeURL(c.Request, "/api/v1/places/"+id.String()))
 	c.JSON(http.StatusCreated, gin.H{"id": id})
 }
 

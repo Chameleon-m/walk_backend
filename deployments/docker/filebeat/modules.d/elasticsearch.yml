@@ -1,0 +1,35 @@
+# https://www.elastic.co/guide/en/beats/filebeat/current/filebeat-configuration-reloading.html#load-module-config
+# https://www.elastic.co/guide/en/beats/filebeat/current/filebeat-reference-yml.html
+#---------------------------- Elasticsearch Module ----------------------------
+# - module: elasticsearch
+#   # Server log
+#   server:
+#     enabled: false
+
+#     # Set custom paths for the log files. If left empty,
+#     # Filebeat will choose the paths depending on your OS.
+#     #var.paths:
+
+#   gc:
+#     enabled: false
+#     # Set custom paths for the log files. If left empty,
+#     # Filebeat will choose the paths depending on your OS.
+#     #var.paths:
+
+#   audit:
+#     enabled: false
+#     # Set custom paths for the log files. If left empty,
+#     # Filebeat will choose the paths depending on your OS.
+#     #var.paths:
+
+#   slowlog:
+#     enabled: false
+#     # Set custom paths for the log files. If left empty,
+#     # Filebeat will choose the paths depending on your OS.
+#     #var.paths:
+
+#   deprecation:
+#     enabled: false
+#     # Set custom paths for the log files. If left empty,
+#     # Filebeat will choose the paths depending on your OS.
+#     #var.paths:
