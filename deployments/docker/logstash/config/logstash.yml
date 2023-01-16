@@ -1,5 +1,58 @@
-http.host: 0.0.0.0
+# https://www.elastic.co/guide/en/logstash/current/logstash-settings-file.html
+
+# No persistent UUID file found. Generating new UUID {:uuid=>"f73b479f-1998-4852-8f31-2fd3a66534b7", :path=>"/usr/share/logstash/data/uuid"}
+# [logstash.agent] Successfully started Logstash API endpoint {:port=>9600, :ssl_enabled=>false}
+# [logstash.outputs.elasticsearch][main] Config is not compliant with data streams. `data_stream => auto` resolved to `false`
+# [WARN ][logstash.outputs.elasticsearch][main] Detected a 6.x and above cluster: the `type` event field won't be used to determine the document _type {:es_version=>8}
+
+node.name: "node-main"
+
+pipeline.workers: 4
+pipeline.batch.size: 125
+pipeline.batch.delay: 50
+pipeline.unsafe_shutdown: false
+pipeline.plugin_classloaders: false
+pipeline.ordered: auto
+pipeline.ecs_compatibility: v8
+
+# path.config: "/usr/share/logstash/config/pipelines.yml"
+# config.string: "/usr/share/logstash/config/pipelines.yml"
+
+config.reload.automatic: true
+config.reload.interval: 3s
+
 queue.type: memory
-xpack.monitoring.elasticsearch.hosts:
-- http://elasticsearch:9200
-xpack.monitoring.enabled: true
+path.queue: "/usr/share/logstash/data/queue"
+# queue.page_capacity: 64mb
+# queue.max_events: 0
+# queue.max_bytes: 1024mb
+# queue.checkpoint.acks: 1024
+# queue.checkpoint.writes: 1024
+# queue.checkpoint.retry: true
+# queue.drain: false
+
+dead_letter_queue.enable: false
+dead_letter_queue.max_bytes: 1024mb
+dead_letter_queue.storage_policy: drop_newer
+path.dead_letter_queue: "/usr/share/logstash/data/dead_letter_queue"
+
+api.enabled: true
+api.environment: production
+api.http.host: "127.0.0.1"
+api.http.port: 9600-9700
+api.ssl.enabled: false
+# api.ssl.keystore.path:
+# api.ssl.keystore.password:
+api.auth.type: none
+# api.auth.basic.username:
+# api.auth.basic.password:
+# api.auth.basic.password_policy.mode: WARN
+
+log.level: info
+log.format: plain
+path.logs: "/usr/share/logstash/logs"
+pipeline.separate_logs: true
+
+# path.plugins: ["/usr/share/logstash/plugins"]
+
+allow_superuser: true

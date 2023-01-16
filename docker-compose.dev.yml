@@ -1,0 +1,107 @@
+version: '3.9'
+
+services:
+
+  # nginx:
+  #   extends:
+  #     file: ./deployments/docker/common.yml
+  #     service: nginx
+  #   extra_hosts:
+  #     - "host.docker.internal:host-gateway"
+  #   volumes:
+  #     - ./deployments/docker/nginx/templates/api-upstream.conf.template:/etc/nginx/templates/api-upstream.conf.template:ro
+  #     - ./deployments/docker/nginx/conf.d/api.conf:/etc/nginx/conf.d/api.conf:ro
+  #     - nginxLogs:/var/log/nginx
+  #   environment:
+  #     API_VERSION: ${API_VERSION}
+  #     API_SCHEMA: ${API_SCHEMA}
+  #     API_HOST: ${API_HOST}
+  #     API_PORT: ${API_PORT}
+
+  rabbitmq:
+    extends:
+      file: ./deployments/docker/common.yml
+      service: rabbitmq
+    volumes:
+      - rabbitmqLogs:/var/log/rabbitmq
+    environment:
+      API_VERSION: ${API_VERSION}
+
+  mongo-replica-setup:
+    extends:
+      file: ./deployments/docker/common.yml
+      service: mongo-replica-setup
+    environment:
+      API_VERSION: ${API_VERSION}
+    depends_on:
+      mongo1:
+        condition: service_healthy
+
+  mongo1:
+    extends:
+      file: ./deployments/docker/common.yml
+      service: mongo1
+    volumes:
+      - mongoLogs:/var/log/mongodb
+    environment:
+      API_VERSION: ${API_VERSION}
+
+  redis:
+    extends:
+      file: ./deployments/docker/common.yml
+      service: redis
+    environment:
+      API_VERSION: ${API_VERSION}
+
+  prometheus:
+    extends:
+      file: ./deployments/docker/common.yml
+      service: prometheus
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./deployments/docker/prometheus/api.yml:/etc/prometheus/prometheus.yml:ro
+    environment:
+      API_VERSION: ${API_VERSION}
+      API_SCHEMA: ${API_SCHEMA}
+      API_HOST: ${API_HOST}
+      API_PORT: ${API_PORT}
+
+  telegraf:
+    extends:
+      file: ./deployments/docker/common.yml
+      service: telegraf
+    environment:
+      API_VERSION: ${API_VERSION}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock # Linux
+      - //var/run/docker.sock:/var/run/docker.sock # Windows WSL 2 engine
+
+  grafana:
+    extends:
+      file: ./deployments/docker/common.yml
+      service: grafana
+    volumes:
+      - grafanaLogs:/var/log/grafana
+    environment:
+      API_VERSION: ${API_VERSION}
+
+volumes:
+  mongoData:
+  mongoLogs:
+  mongoConfig:
+  rabbitmqData:
+  rabbitmqLogs:
+  grafanaData:
+  grafanaLogs:
+  redisData:
+  redisLogs:
+  prometheusData:
+  # nginxLogs:
+  #   name: nginxLogs
+
+networks:
+  netApplication:
+    name: netApplication
+  # netNginx:
+  #   name: netNginx

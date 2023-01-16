@@ -1,0 +1,36 @@
+# The default mechanism for Reporting privileges will work differently in future versions,
+# which will affect the behavior of this cluster. Set "xpack.reporting.roles.enabled" to "false"
+# to adopt the future behavior before upgrading.
+
+# Generating a random key for xpack.security.encryptionKey.
+# To prevent sessions from being invalidated on restart, please set xpack.security.encryptionKey
+# in the kibana.yml or use the bin/kibana-encryption-keys command.
+
+# Saved objects encryption key is not set. This will severely limit Kibana functionality.
+# Please set xpack.encryptedSavedObjects.encryptionKey in the kibana.yml or use the bin/kibana-encryption-keys command.
+
+# Found 'server.host: "0.0.0.0"' in Kibana configuration. Reporting is not able to use this as the Kibana server hostname.
+# To enable PNG/PDF Reporting to work, 'xpack.reporting.kibanaServer.hostname: localhost' is automatically set in the configuration.
+# You can prevent this message by adding 'xpack.reporting.kibanaServer.hostname: localhost' in kibana.yml.
+
+#
+# ** THIS IS AN AUTO-GENERATED FILE **
+#
+
+# Default Kibana configuration for docker target
+server.host: "0.0.0.0"
+server.port: 5601
+server.shutdownTimeout: "5s"
+
+elasticsearch.hosts: [ "${ELASTICSEARCH_HOSTS:http://elasticsearch:9200}" ]
+
+monitoring.ui.container.elasticsearch.enabled: true
+
+xpack.reporting.roles.enabled: false
+xpack.reporting.kibanaServer.hostname: localhost
+
+# bin/kibana-encryption-keys generate
+xpack.encryptedSavedObjects.encryptionKey: 0ea3ab9402233dc6d6b3114647ecc1f4
+xpack.reporting.encryptionKey: de6843a2b3659c696cd5a39f31370d07
+xpack.security.encryptionKey: 9bc05f626602793f7716cfa1bb487d7f
+

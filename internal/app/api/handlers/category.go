@@ -80,7 +80,7 @@ func (handler *CategoriesHandler) NewCategoryHandler(c *gin.Context) {
 		return
 	}
 
-	c.Header("Location", makeURL(c.Request, "/v1/categories/"+id.String()))
+	c.Header("Location", makeURL(c.Request, "/api/v1/categories/"+id.String()))
 	c.JSON(http.StatusCreated, gin.H{"id": id})
 }
 

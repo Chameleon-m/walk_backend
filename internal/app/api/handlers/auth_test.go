@@ -29,13 +29,13 @@ func TestAuthHandler_Registration(t *testing.T) {
 		{Username: "test", Password: "test"},
 	}
 
-	url := "/v1/auth/registration"
+	url := "/api/v1/auth/registration"
 
 	controller := gomock.NewController(t)
 	defer controller.Finish()
 
 	router := gin.Default()
-	apiV1 := router.Group("/v1")
+	apiV1 := router.Group("/api/v1")
 
 	mockAuthService := mockService.NewMockAuthServiceInteface(controller)
 
