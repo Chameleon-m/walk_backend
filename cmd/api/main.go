@@ -4,7 +4,7 @@
 //
 //	Schemes: http
 //	Host: localhost:8080
-//	BasePath: /v1/api
+//	BasePath: /api/v1
 //	Version: 0.0.1
 //	Contact: Dmitry Korolev <korolev.d.l@yandex.ru> https://github.com/Chameleon-m
 //
@@ -25,6 +25,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -95,7 +96,7 @@ func main() {
 	publisher, err := rabbitmq.NewPublisher(
 		os.Getenv("RABBITMQ_URI"),
 		rabbitmq.Config{
-			Dial: amqp091.DefaultDial(30*time.Second),
+			Dial: amqp091.DefaultDial(30 * time.Second),
 		},
 		rabbitmq.WithPublisherOptionsLogger(rabbitmqLog.NewLogger(rabbitmqLoggger, rabbitmqLoggger)),
 	)
@@ -173,7 +174,7 @@ func main() {
 	router.Use(middleware.RequestAbsURL())
 
 	// routes for version 1
-	apiV1 := router.Group("/v1")
+	apiV1 := router.Group("/api/v1")
 	apiV1auth := apiV1.Group("")
 
 	// session midelleware
@@ -192,8 +193,10 @@ func main() {
 	router.GET("/prometheus", gin.WrapH(promhttp.Handler()))
 
 	// build server
+	apiPort := os.Getenv("API_PORT")
+	addr := fmt.Sprintf(":%s", apiPort)
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    addr,
 		Handler: router,
 		// TODO
 	}
