@@ -2,6 +2,7 @@ version: '3.9'
 
 services:
 
+  # Теперь NGINX в frontend репозитории
   # nginx:
   #   extends:
   #     file: ./deployments/docker/common.yml
@@ -111,6 +112,8 @@ services:
     extends:
       file: ./deployments/docker/common.yml
       service: prometheus
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./deployments/docker/prometheus/api.yml:/etc/prometheus/prometheus.yml:ro
     environment:
@@ -124,20 +127,23 @@ services:
         gelf-address: "udp://localhost:12201"
         tag: "prometheus-docker"
 
-  telegraf:
-    extends:
-      file: ./deployments/docker/common.yml
-      service: telegraf
-    environment:
-      API_VERSION: ${API_VERSION}
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock # Linux
-      - //var/run/docker.sock:/var/run/docker.sock # Windows WSL 2 engine
-    logging:
-      driver: gelf
-      options:
-        gelf-address: "udp://localhost:12201"
-        tag: "telegraf-docker"
+  # Теперь Prometheus забирает метрику с docker metrics-addr напрямую.
+  # Как вариант для telegraf, обращаться к docker по TCP вместо docker.sock
+  # telegraf:
+  #   extends:
+  #     file: ./deployments/docker/common.yml
+  #     service: telegraf
+  #   # user: ${CURRENT_UID:?"Please run as follows 'CURRENT_UID=telegraf:$(stat -c '%g' /var/run/docker.sock) docker-compose up'"}
+  #   environment:
+  #     API_VERSION: ${API_VERSION}
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock # Linux
+  #     - //var/run/docker.sock:/var/run/docker.sock # Windows WSL 2 engine
+  #   logging:
+  #     driver: gelf
+  #     options:
+  #       gelf-address: "udp://localhost:12201"
+  #       tag: "telegraf-docker"
 
   grafana:
     extends:

@@ -109,7 +109,7 @@ func main() {
 	collectionPlaces := mongoClient.Database(mongoDB).Collection("places")
 	placeMongoRepository := repository.NewPlaceMongoRepository(ctx, collectionPlaces)
 	placeQueueRabbitRepository := repository.NewPlaceQueueRabbitRepository(publisher, notifyReturn, notifyPublish)
-	placeService := service.NewDefaultPlaceService(placeMongoRepository, categoryMongoRepository, placeQueueRabbitRepository)
+	placeService := service.NewDefaultPlaceService(placeMongoRepository, categoryMongoRepository, placeQueueRabbitRepository, nil, nil)
 
 	done := make(chan bool, 1)
 	go func() {

@@ -49,13 +49,15 @@ export RABBITMQ_ROUTING_PLACE_KEY=place_routing_key
 export RABBITMQ_QUEUE_PLACE_REINDEX=place_reindex_queue
 
 # REDIS
-REDIS_HOST: redis
-REDIS_PORT: 6379
-REDIS_PASSWORD:
+export REDIS_HOST=redis
+export REDIS_PORT=6379
+export REDIS_PASSWORD=""
 
 #KIBANA
-KIBANA_HOST=kibana:5601
-ELASTICSEARCH_HOSTS=elasticsearch:9200
+export ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+export LOGSTAH_HOST=logstash:12201
+export KIBANA_HOST=kibana:5601
+
 ```
 # DB
 
