@@ -33,6 +33,7 @@ build-mocks:
 	@~/go/bin/mockgen -source internal/app/repository/place_repository_interface.go -destination internal/app/repository/mock/place_repository_mock.go -package mock
 	@~/go/bin/mockgen -source internal/app/repository/category_repository_interface.go -destination internal/app/repository/mock/category_repository_mock.go -package mock
 	@~/go/bin/mockgen -source internal/app/repository/user_repository_interface.go -destination internal/app/repository/mock/user_repository_mock.go -package mock
+	@~/go/bin/mockgen -source internal/app/repository/place_cache_repository_interface.go -destination internal/app/repository/mock/place_cache_repository_mock.go -package mock
 	@~/go/bin/mockgen -source internal/app/service/place_service_interface.go -destination internal/app/service/mock/place_service_mock.go -package mock
 	@~/go/bin/mockgen -source internal/app/service/category_service_interface.go -destination internal/app/service/mock/category_service_mock.go -package mock
 	@~/go/bin/mockgen -source internal/app/service/auth_service_interface.go -destination internal/app/service/mock/auth_service_mock.go -package mock

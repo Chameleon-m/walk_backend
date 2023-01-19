@@ -40,11 +40,13 @@ import (
 	"walk_backend/internal/app/api/presenter"
 	"walk_backend/internal/app/repository"
 	"walk_backend/internal/app/service"
+	"walk_backend/internal/pkg/cache"
 	rabbitmqLog "walk_backend/internal/pkg/rabbitmqcustom"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/mongo/mongodriver"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis/v9"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rabbitmq/amqp091-go"
 	rabbitmq "github.com/wagslane/go-rabbitmq"
@@ -72,9 +74,22 @@ func main() {
 
 	var err error
 
+	// Redis
+	ctxRedis, redisCancel := context.WithCancel(ctxSignal)
+	defer redisCancel()
+	addrRedis := fmt.Sprintf("%s:%s", os.Getenv("REDIS_HOST"), os.Getenv("REDIS_PORT"))
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     addrRedis,
+		Password: os.Getenv("REDIS_PASSWORD"),
+		DB:       0, // use default DB
+	})
+
+	status := redisClient.Ping(ctxRedis)
+	log.Println(status)
+
 	// DB
-	ctxMongo, cancel := context.WithCancel(ctxSignal)
-	defer cancel()
+	ctxMongo, mongoCancel := context.WithCancel(ctxSignal)
+	defer mongoCancel()
 	mongoClientOptions := options.Client()
 	mongoClientOptions.ApplyURI(os.Getenv("MONGO_URI"))
 	mongoClient, err := mongo.Connect(ctxMongo, mongoClientOptions)
@@ -155,8 +170,16 @@ func main() {
 	// place
 	collectionPlaces := mongoClient.Database(mongoDB).Collection("places")
 	placeMongoRepository := repository.NewPlaceMongoRepository(ctx, collectionPlaces)
+	placeCacheRedisRepository := repository.NewPlaceCacheRedisRepository(ctx, redisClient)
 	placeQueueRabbitRepository := repository.NewPlaceQueueRabbitRepository(publisher, notifyReturn, notifyPublish)
-	placeService := service.NewDefaultPlaceService(placeMongoRepository, categoryMongoRepository, placeQueueRabbitRepository)
+	keyBuilder := cache.NewKeyBuilderDefault()
+	placeService := service.NewDefaultPlaceService(
+		placeMongoRepository,
+		categoryMongoRepository,
+		placeQueueRabbitRepository,
+		placeCacheRedisRepository,
+		keyBuilder,
+	)
 	placePresenter := presenter.NewPlacePresenter()
 	placesHandler = handlers.NewPlacesHandler(ctx, placeService, placePresenter)
 
@@ -212,6 +235,8 @@ func main() {
 			log.Println("os signal done")
 		case <-ctxMongo.Done():
 			log.Println("mongo done")
+		case <-ctxRedis.Done():
+			log.Println("redis done")
 		}
 
 		done <- true

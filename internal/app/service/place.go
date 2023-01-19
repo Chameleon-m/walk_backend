@@ -2,11 +2,20 @@ package service
 
 import (
 	"time"
+
 	"walk_backend/internal/app/dto"
 	"walk_backend/internal/app/model"
 	"walk_backend/internal/app/repository"
+	"walk_backend/internal/pkg/cache"
 
 	"github.com/gosimple/slug"
+)
+
+const (
+	listPlacesCacheKey            string        = "list-places"
+	listPlacesCacheDuration       time.Duration = 5 * time.Minute
+	searchListPlacesCacheKey      string        = "search-list-places"
+	searchListPlacesCacheDuration time.Duration = 5 * time.Minute
 )
 
 // DefaultPlaceService ...
@@ -14,6 +23,8 @@ type DefaultPlaceService struct {
 	placeRepo    repository.PlaceRepositoryInterface
 	categoryRepo repository.CategoryRepositoryInterface
 	placeQueue   repository.PlaceQueueRepositoryInterface
+	placeCache   repository.PlaceCacheRepositoryInterface
+	keyBuilder   cache.KeyBuilderInterface
 }
 
 var _ PlaceServiceInteface = (*DefaultPlaceService)(nil)
@@ -23,17 +34,38 @@ func NewDefaultPlaceService(
 	placeRepo repository.PlaceRepositoryInterface,
 	categoryRepo repository.CategoryRepositoryInterface,
 	placeQueue repository.PlaceQueueRepositoryInterface,
+	placeCache repository.PlaceCacheRepositoryInterface,
+	keyBuilder cache.KeyBuilderInterface,
 ) *DefaultPlaceService {
 	return &DefaultPlaceService{
 		placeRepo:    placeRepo,
 		categoryRepo: categoryRepo,
 		placeQueue:   placeQueue,
+		placeCache:   placeCache,
+		keyBuilder:   keyBuilder,
 	}
 }
 
 // ListPlaces ...
 func (s *DefaultPlaceService) ListPlaces() (model.PlaceList, error) {
-	return s.placeRepo.FindAll()
+
+	places, err := s.placeCache.Get(listPlacesCacheKey)
+	if err != nil {
+		return nil, err
+	} else if places != nil {
+		return places, nil
+	}
+
+	places, err = s.placeRepo.FindAll()
+	if err != nil {
+		return nil, err
+	}
+
+	if err = s.placeCache.Set(listPlacesCacheKey, places, listPlacesCacheDuration); err != nil {
+		return nil, err
+	}
+
+	return places, nil
 }
 
 // Create ...
@@ -47,6 +79,10 @@ func (s *DefaultPlaceService) Create(d *dto.Place) (model.ID, error) {
 
 	id, err := s.placeRepo.Create(m)
 	if err != nil {
+		return model.NilID, err
+	}
+
+	if err := s.placeCache.Del(listPlacesCacheKey); err != nil {
 		return model.NilID, err
 	}
 
@@ -70,6 +106,10 @@ func (s *DefaultPlaceService) Update(d *dto.Place) error {
 		return err
 	}
 
+	if err := s.placeCache.Del(listPlacesCacheKey); err != nil {
+		return err
+	}
+
 	if err := s.placeQueue.PublishReIndex(m.ID); err != nil {
 		return err
 	}
@@ -81,6 +121,10 @@ func (s *DefaultPlaceService) Update(d *dto.Place) error {
 func (s *DefaultPlaceService) Delete(id model.ID) error {
 
 	if err := s.placeRepo.Delete(id); err != nil {
+		return err
+	}
+
+	if err := s.placeCache.Del(listPlacesCacheKey); err != nil {
 		return err
 	}
 
@@ -98,7 +142,31 @@ func (s *DefaultPlaceService) Find(id model.ID) (*model.Place, error) {
 
 // Search ...
 func (s *DefaultPlaceService) Search(search string) (model.PlaceList, error) {
-	return s.placeRepo.Search(search)
+
+	key := s.keyBuilder.NewKey()
+	key.Add(searchListPlacesCacheKey)
+	if err := key.AddHashed(search); err != nil {
+		return nil, err
+	}
+	cacheKey := key.String()
+
+	places, err := s.placeCache.Get(cacheKey)
+	if err != nil {
+		return nil, err
+	} else if places != nil {
+		return places, nil
+	}
+
+	places, err = s.placeRepo.Search(search)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = s.placeCache.Set(cacheKey, places, searchListPlacesCacheDuration); err != nil {
+		return nil, err
+	}
+
+	return places, nil
 }
 
 // ListCategories ...
