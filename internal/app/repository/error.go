@@ -6,11 +6,11 @@ import (
 
 var (
 	// ErrInvalidString ...
-	ErrInvalidString = errors.New("The provided string is not a valid ID")
+	ErrInvalidString = errors.New("the provided string is not a valid ID")
 	// ErrModelNotFound ...
-	ErrModelNotFound = errors.New("Model not found")
+	ErrModelNotFound = errors.New("model not found")
 	// ErrModelUpdate ...
-	ErrModelUpdate   = errors.New("No upsert was done")
+	ErrModelUpdate = errors.New("no upsert was done")
 )
 
 // IsErrInvalidString check is a ErrInvalidString

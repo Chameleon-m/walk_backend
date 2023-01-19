@@ -12,7 +12,7 @@ import (
 
 var (
 	// ErrInvalidUsernameOrPassword ...
-	ErrInvalidUsernameOrPassword = errors.New("Invalid username or password")
+	ErrInvalidUsernameOrPassword = errors.New("invalid username or password")
 )
 
 // DefaultAuthService ...
