@@ -9,10 +9,10 @@
 //	Contact: Dmitry Korolev <korolev.d.l@yandex.ru> https://github.com/Chameleon-m
 //
 //	SecurityDefinitions:
-//	    api_key:
+//	    cookieAuth:
 //	      type: apiKey
-//	      name: Authorization
-//	      in: header
+//	      in: cookie
+//	      name: session_name
 //
 //	Consumes:
 //	  - application/json
@@ -43,12 +43,14 @@ import (
 	"walk_backend/internal/pkg/cache"
 	rabbitmqLog "walk_backend/internal/pkg/rabbitmqcustom"
 
+	"github.com/gin-contrib/logger"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/mongo/mongodriver"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v9"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rabbitmq/amqp091-go"
+	"github.com/rs/zerolog"
 	rabbitmq "github.com/wagslane/go-rabbitmq"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -183,11 +185,34 @@ func main() {
 	placePresenter := presenter.NewPlacePresenter()
 	placesHandler = handlers.NewPlacesHandler(ctx, placeService, placePresenter)
 
-	// log
-	fileLog, _ := os.Create("debug.log")
-	gin.DefaultWriter = io.MultiWriter(fileLog)
+	// Engine
+	router := gin.New()
+	router.Use(gin.Recovery())
 
-	router := gin.Default()
+	// log
+	fileLog, err := os.Create("debug.log")
+	failOnError(err, "DEBUG LOG | Create")
+
+	defaultLevel, err := zerolog.ParseLevel(os.Getenv("LOG_DEFAULT_LEVEL"))
+	failOnError(err, "DEBUG LOG | LOG_DEFAULT_LEVEL env")
+	clientLevel, err := zerolog.ParseLevel(os.Getenv("LOG_CLIENT_LEVEL"))
+	failOnError(err, "DEBUG LOG | LOG_CLIENT_LEVEL env")
+	serverLevel, err := zerolog.ParseLevel(os.Getenv("LOG_SERVER_LEVEL"))
+	failOnError(err, "DEBUG LOG | LOG_SERVER_LEVEL env")
+
+	router.Use(logger.SetLogger(
+		logger.WithSkipPath([]string{"/version", "/prometheus"}),
+		logger.WithUTC(true),
+		logger.WithWriter(io.MultiWriter(fileLog)),
+		logger.WithDefaultLevel(defaultLevel),
+		logger.WithClientErrorLevel(clientLevel),
+		logger.WithServerErrorLevel(serverLevel),
+		logger.WithLogger(func(c *gin.Context, log zerolog.Logger) zerolog.Logger {
+			return log.With().
+				Str("id", c.GetHeader("X-Request-ID")).
+				Logger()
+		}),
+	))
 	// router.SetTrustedProxies([]string{"192.168.1.2"})
 	// router.UseH2C = true
 
