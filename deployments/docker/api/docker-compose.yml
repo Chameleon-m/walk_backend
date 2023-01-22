@@ -35,7 +35,11 @@ services:
       SITE_PORT: ${SITE_PORT}
       REDIS_HOST: ${REDIS_HOST}
       REDIS_PORT: ${REDIS_PORT}
+      REDIS_USERNAME: ${REDIS_USERNAME}
       REDIS_PASSWORD: ${REDIS_PASSWORD}
+      LOG_DEFAULT_LEVEL: ${LOG_DEFAULT_LEVEL}
+      LOG_CLIENT_LEVEL: ${LOG_CLIENT_LEVEL}
+      LOG_SERVER_LEVEL: ${LOG_SERVER_LEVEL}
     networks:
       - netApplication
       - netNginx

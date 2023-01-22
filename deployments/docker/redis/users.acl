@@ -1,0 +1,2 @@
+user username on >password ~* &* +@all
+user default off nopass ~* &* +@all

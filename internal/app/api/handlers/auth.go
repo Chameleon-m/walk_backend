@@ -132,7 +132,6 @@ func (handler *AuthHandler) RefreshHandler(c *gin.Context) {
 
 	session := sessions.Default(c)
 	sessionToken := session.Get("token")
-	sessionUser := session.Get("username")
 	if sessionToken == nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid session cookie"})
 		return
@@ -143,14 +142,6 @@ func (handler *AuthHandler) RefreshHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generate token"})
 		return
 	}
-
-	username, ok := sessionUser.(string)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error username type assertion"})
-		return
-	}
-
-	session.Set("username", username)
 	session.Set("token", sessionTokenNew)
 	session.Save()
 

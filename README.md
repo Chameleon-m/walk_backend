@@ -23,11 +23,16 @@ export SITE_SCHEMA=https
 export SITE_HOST=localhost
 export SITE_PORT=443
 
+# LOG trace -1 debug 0 info 1 warn 2 error 3  fatal 4 panic 5 disabled = 6 "" = 7
+export LOG_DEFAULT_LEVEL=debug
+export LOG_CLIENT_LEVEL=warn
+export LOG_SERVER_LEVEL=error
+
 # API # HOST host.docker.internal or api or ip
-API_VERSION=0.0.1
-API_SCHEMA=http
-API_HOST=api
-API_PORT=8080
+export API_VERSION=0.0.1
+export API_SCHEMA=http
+export API_HOST=api
+export API_PORT=8080
 
 # GIN
 export PORT=8080
@@ -51,7 +56,8 @@ export RABBITMQ_QUEUE_PLACE_REINDEX=place_reindex_queue
 # REDIS
 export REDIS_HOST=redis
 export REDIS_PORT=6379
-export REDIS_PASSWORD=""
+export REDIS_USERNAME=username
+export REDIS_PASSWORD=password
 
 #KIBANA
 export ELASTICSEARCH_HOSTS=http://elasticsearch:9200
