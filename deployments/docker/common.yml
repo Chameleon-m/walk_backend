@@ -102,11 +102,11 @@ services:
       - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
       - ./redis/users.acl:/usr/local/etc/redis/users.acl
     healthcheck:
-      test: redis-cli ping | grep PONG
-      interval: 30s
+      test: redis-cli -h ${REDIS_HOST:-127.0.0.1} -p ${REDIS_PORT:-6379} --user ${REDIS_USERNAME} --pass ${REDIS_PASSWORD} PING | grep PONG
+      interval: 3s
       timeout: 3s
       retries: 3
-    command: redis-server /usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf --loglevel ${REDIS_LOG_LEVEL:-debug}
     networks:
       - netApplication
 
