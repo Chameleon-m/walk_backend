@@ -82,6 +82,7 @@ func main() {
 	addrRedis := fmt.Sprintf("%s:%s", os.Getenv("REDIS_HOST"), os.Getenv("REDIS_PORT"))
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:     addrRedis,
+		Username: os.Getenv("REDIS_USERNAME"),
 		Password: os.Getenv("REDIS_PASSWORD"),
 		DB:       0, // use default DB
 	})
@@ -187,6 +188,7 @@ func main() {
 
 	// Engine
 	router := gin.New()
+	gin.SetMode(os.Getenv("GIN_MODE"))
 	router.Use(gin.Recovery())
 
 	// log

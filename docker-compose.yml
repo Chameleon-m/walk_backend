@@ -64,7 +64,6 @@ services:
       file: ./deployments/docker/api/docker-compose.yml
       service: api
     volumes:
-      - ./deployments/docker/nginx/conf.d/api.conf:/etc/nginx/conf.d/api.conf:ro
       - ./debug.log:/root/debug.log
     depends_on:
       rabbitmq:
@@ -255,6 +254,7 @@ volumes:
     name: nginxLogs
   kibanaLogs:
   prometheusData:
+
 
 networks:
   netApplication:

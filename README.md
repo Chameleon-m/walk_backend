@@ -56,7 +56,8 @@ export RABBITMQ_QUEUE_PLACE_REINDEX=place_reindex_queue
 # REDIS
 export REDIS_HOST=redis
 export REDIS_PORT=6379
-export REDIS_PASSWORD=""
+export REDIS_USERNAME=username
+export REDIS_PASSWORD=password
 
 #KIBANA
 export ELASTICSEARCH_HOSTS=http://elasticsearch:9200
