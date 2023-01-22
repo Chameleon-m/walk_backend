@@ -44,6 +44,7 @@ func (handler *CategoriesHandler) ListCategoriesHandler(c *gin.Context) {
 
 	categoryList, err := handler.service.ListCategories()
 	if err != nil {
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -76,6 +77,7 @@ func (handler *CategoriesHandler) NewCategoryHandler(c *gin.Context) {
 
 	id, err := handler.service.Create(dto)
 	if err != nil {
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -116,6 +118,7 @@ func (handler *CategoriesHandler) UpdateCategryHandler(c *gin.Context) {
 	}
 
 	if err := handler.service.Update(dto); err != nil {
+		c.Error(err)
 		if errors.Is(err, model.ErrModelNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
@@ -161,6 +164,7 @@ func (handler *CategoriesHandler) DeleteCategoryHandler(c *gin.Context) {
 	}
 
 	if err := handler.service.Delete(categoryID); err != nil {
+		c.Error(err)
 		if errors.Is(err, model.ErrModelNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
@@ -198,12 +202,14 @@ func (handler *CategoriesHandler) GetOneCategoryHandler(c *gin.Context) {
 	id := c.Param("id")
 	categoryID, err := model.StringToID(id)
 	if err != nil {
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	category, err := handler.service.Find(categoryID)
 	if err != nil {
+		c.Error(err)
 		if errors.Is(err, model.ErrModelNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
