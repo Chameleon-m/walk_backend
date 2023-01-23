@@ -58,6 +58,8 @@ export REDIS_HOST=redis
 export REDIS_PORT=6379
 export REDIS_USERNAME=username
 export REDIS_PASSWORD=password
+# debug verbose notice warning
+export REDIS_LOG_LEVEL=notice
 
 #KIBANA
 export ELASTICSEARCH_HOSTS=http://elasticsearch:9200
@@ -70,9 +72,15 @@ export KIBANA_HOST=kibana:5601
 ## MongoDB
 ### Gegerate keyFile
 ```
-openssl rand -base64 700 > ./docker/mongodb/file.key
-chmod 400 ./docker/mongodb/file.key
-sudo chown 999:999 ./docker/mongodb/file.key
+openssl rand -base64 700 > ./deployments/docker/mongodb/file.key
+cd deployments/docker/mongodb
+# linux
+chmod 400 file.key
+sudo chown 999:999 file.key
+# windows
+icacls.exe file.key /reset
+icacls.exe file.key /grant:r "$($env:username):(r)"
+icacls.exe file.key /inheritance:r
 ```
 
 ### Docker

@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"errors"
-	"log"
 	"net/http"
 
 	"walk_backend/internal/app/api/presenter"
@@ -55,11 +54,11 @@ func (handler *AuthHandler) SignUpHandler(c *gin.Context) {
 
 	_, err := handler.service.Registration(dto)
 	if err != nil {
+		c.Error(err)
 		if errors.Is(err, service.ErrInvalidUsernameOrPassword) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		log.Printf("[ERROR] Auth service registration error: %s", err)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "Auth service registration error")
 		return
 	}
@@ -92,17 +91,18 @@ func (handler *AuthHandler) SignInHandler(c *gin.Context) {
 
 	user, err := handler.service.Login(dto)
 	if err != nil {
+		c.Error(err)
 		if errors.Is(err, service.ErrInvalidUsernameOrPassword) {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
-		log.Printf("[ERROR] Auth service login error: %s", err)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "Auth service login error")
 		return
 	}
 
 	sessionTokenNew, err := handler.service.GenerateToken()
 	if err != nil {
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generate token"})
 		return
 	}
@@ -139,6 +139,7 @@ func (handler *AuthHandler) RefreshHandler(c *gin.Context) {
 
 	sessionTokenNew, err := handler.service.GenerateToken()
 	if err != nil {
+		c.Error(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generate token"})
 		return
 	}
