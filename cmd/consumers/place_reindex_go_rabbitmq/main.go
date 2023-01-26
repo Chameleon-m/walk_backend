@@ -42,8 +42,8 @@ func main() {
 	// zerolog.ErrorStackFieldName = "s"
 	// zerolog.DisableSampling(true)
 
-	log := zerolog.New(os.Stdout).With().Timestamp().Logger()
-	logErr := zerolog.New(os.Stderr).With().Timestamp().Logger()
+	log := zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout, NoColor: true}).With().Timestamp().Logger()
+	logErr := zerolog.New(zerolog.ConsoleWriter{Out: os.Stderr, NoColor: true}).With().Timestamp().Logger()
 
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	if env.GetMust("GIN_MODE") == "debug" {
