@@ -6,7 +6,7 @@ import (
 	"walk_backend/internal/app/dto"
 	"walk_backend/internal/app/model"
 	"walk_backend/internal/app/repository"
-	"walk_backend/internal/pkg/cache"
+	"walk_backend/internal/pkg/component/cache"
 
 	"github.com/gosimple/slug"
 )

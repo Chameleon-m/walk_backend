@@ -15,6 +15,17 @@ import (
 	"golang.org/x/net/context"
 )
 
+type PlacesHandlerInterface interface {
+	HandlerWithAuthInterface
+	HandlerRequestValidationInterface
+	ListPlacesHandler(c *gin.Context)
+	NewPlaceHandler(c *gin.Context)
+	UpdatePlaceHandler(c *gin.Context)
+	DeletePlaceHandler(c *gin.Context)
+	GetOnePlaceHandler(c *gin.Context)
+	SearchPlacesHandler(c *gin.Context)
+}
+
 // PlacesHandler ...
 type PlacesHandler struct {
 	service   service.PlaceServiceInteface

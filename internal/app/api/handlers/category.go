@@ -13,6 +13,15 @@ import (
 	"golang.org/x/net/context"
 )
 
+type CategoriesHandlerInterface interface {
+	HandlerWithAuthInterface
+	ListCategoriesHandler(c *gin.Context)
+	NewCategoryHandler(c *gin.Context)
+	UpdateCategryHandler(c *gin.Context)
+	DeleteCategoryHandler(c *gin.Context)
+	GetOneCategoryHandler(c *gin.Context)
+}
+
 // CategoriesHandler categories handler struct
 type CategoriesHandler struct {
 	service   service.CategoryServiceInteface
