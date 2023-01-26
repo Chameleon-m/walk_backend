@@ -9,23 +9,24 @@ var _ rabbitmq.Logger = (*zerologLogger)(nil)
 
 // zerologLogger logs to stdout up to the `DebugF` level
 type zerologLogger struct {
-	log zerolog.Logger
+	log    zerolog.Logger
+	logErr zerolog.Logger
 }
 
-func NewZerologLogger(log zerolog.Logger) zerologLogger {
-	return zerologLogger{log: log}
+func NewZerologLogger(log, logErr zerolog.Logger) zerologLogger {
+	return zerologLogger{log: log, logErr: logErr}
 }
 
 func (l zerologLogger) Fatalf(format string, v ...interface{}) {
-	l.log.Fatal().Msgf(format, v...)
+	l.logErr.Fatal().Msgf(format, v...)
 }
 
 func (l zerologLogger) Errorf(format string, v ...interface{}) {
-	l.log.Error().Msgf(format, v...)
+	l.logErr.Error().Msgf(format, v...)
 }
 
 func (l zerologLogger) Warnf(format string, v ...interface{}) {
-	l.log.Warn().Msgf(format, v...)
+	l.logErr.Warn().Msgf(format, v...)
 }
 
 func (l zerologLogger) Infof(format string, v ...interface{}) {
