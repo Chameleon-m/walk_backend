@@ -3,18 +3,18 @@ package main
 import (
 	"context"
 	"flag"
-	"log"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 	"time"
 
 	"walk_backend/internal/app/model"
 	"walk_backend/internal/app/repository"
 	"walk_backend/internal/app/service"
+	"walk_backend/internal/pkg/component/env"
 	rabbitmqLog "walk_backend/internal/pkg/rabbitmqcustom"
 
+	"github.com/rs/zerolog"
 	rabbitmq "github.com/wagslane/go-rabbitmq"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -24,8 +24,6 @@ import (
 var (
 	prefetchCount  = flag.Int("prefetch-count", 0, "Qos prefetch count")
 	reconnectDelay = flag.Duration("reconnect-delay", 5*time.Second, "Reconnect delay")
-	errLog         = log.New(os.Stderr, "[ERROR] ", log.LstdFlags|log.Lmsgprefix)
-	infLog         = log.New(os.Stdout, "[INFO] ", log.LstdFlags|log.Lmsgprefix)
 )
 
 func init() {
@@ -34,52 +32,67 @@ func init() {
 
 func main() {
 
+	env := env.New()
+
+	// zerolog.TimestampFieldName = "t"
+	// zerolog.LevelFieldName = "l"
+	// zerolog.MessageFieldName = "m"
+	// zerolog.ErrorFieldName = "e"
+	// zerolog.CallerFieldName = "c"
+	// zerolog.ErrorStackFieldName = "s"
+	// zerolog.DisableSampling(true)
+
+	log := zerolog.New(os.Stdout).With().Timestamp().Logger()
+	logErr := zerolog.New(os.Stderr).With().Timestamp().Logger()
+
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	if env.GetMust("GIN_MODE") == "debug" {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	}
+
 	// Create context that listens for the interrupt signal from the OS.
 	ctxSignal, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
 	// ENV
-	workersCount, err := strconv.Atoi(os.Getenv("RABBITMQ_CONSUMERS_PLACE_REINDEX_COUNT"))
-	if err != nil {
-		errLog.Fatalf("ENV RABBITMQ_CONSUMERS_PLACE_REINDEX_COUNT: %s", err)
-	}
+	workersCount := env.GetMustInt("RABBITMQ_CONSUMERS_PLACE_REINDEX_COUNT")
 
-	mongoURI := os.Getenv("MONGO_URI")
-	mongoDB := os.Getenv("MONGO_INITDB_DATABASE")
+	mongoURI := env.GetMust("MONGO_URI")
+	mongoDB := env.GetMust("MONGO_INITDB_DATABASE")
 
-	rabbitmqURL := os.Getenv("RABBITMQ_URI")
-	consumerTag := os.Getenv("RABBITMQ_CONSUMERS_PLACE_REINDEX_TAG")
-	exchange := os.Getenv("RABBITMQ_EXCHANGE_REINDEX")
-	exchangeType := os.Getenv("RABBITMQ_EXCHANGE_TYPE")
-	queue := os.Getenv("RABBITMQ_QUEUE_PLACE_REINDEX")
-	routingKey := os.Getenv("RABBITMQ_ROUTING_PLACE_KEY")
+	rabbitmqURL := env.GetMust("RABBITMQ_URI")
+	consumerTag := env.GetMust("RABBITMQ_CONSUMERS_PLACE_REINDEX_TAG")
+	exchange := env.GetMust("RABBITMQ_EXCHANGE_REINDEX")
+	exchangeType := env.GetMust("RABBITMQ_EXCHANGE_TYPE")
+	queue := env.GetMust("RABBITMQ_QUEUE_PLACE_REINDEX")
+	routingKey := env.GetMust("RABBITMQ_ROUTING_PLACE_KEY")
 
 	// DB
 	ctxMongo, cancel := context.WithCancel(ctxSignal)
 	defer cancel()
 	mongoClient, err := mongo.Connect(ctxMongo, options.Client().ApplyURI(mongoURI))
 	if err != nil {
-		errLog.Fatal(err)
+		logErr.Fatal().Err(err).Caller().Send()
 	}
 	defer func() {
 		if err = mongoClient.Disconnect(ctxMongo); err != nil {
-			errLog.Printf("error disconect client : %s\n", err)
+			log.Info().Err(err).Caller().Send()
 		}
 	}()
 	if err = mongoClient.Ping(ctxMongo, readpref.Primary()); err != nil {
-		errLog.Fatal(err)
+		logErr.Fatal().Err(err).Caller().Send()
 	}
-	infLog.Println("connected to MongoDB")
+	log.Print("connected to MongoDB")
 
 	// Consumer configuration
 	consumer, err := rabbitmq.NewConsumer(
 		rabbitmqURL,
 		rabbitmq.Config{},
-		rabbitmq.WithConsumerOptionsLogger(rabbitmqLog.NewLogger(infLog, errLog)),
+		rabbitmq.WithConsumerOptionsLogger(rabbitmqLog.NewZerologLogger(log, logErr)),
 		rabbitmq.WithConsumerOptionsReconnectInterval(*reconnectDelay),
 	)
 	if err != nil {
-		errLog.Fatal(err)
+		logErr.Fatal().Err(err).Caller().Send()
 	}
 	defer consumer.Close()
 
@@ -89,14 +102,14 @@ func main() {
 		rabbitmq.WithPublisherOptionsLogging,
 	)
 	if err != nil {
-		errLog.Fatal(err)
+		logErr.Fatal().Err(err).Caller().Send()
 	}
 	defer publisher.Close()
 
 	notifyReturn := publisher.NotifyReturn()
 	notifyPublish := publisher.NotifyPublish()
 
-	infLog.Println("Connected to RabbitMQ")
+	log.Print("Connected to RabbitMQ")
 
 	ctx, cancel := context.WithCancel(ctxSignal)
 	defer cancel()
@@ -114,13 +127,13 @@ func main() {
 	done := make(chan bool, 1)
 	go func() {
 		select {
-		case <-ctx.Done():
-			log.Println("ctx done")
 		// Listen for the interrupt signal.
 		case <-ctxSignal.Done():
-			log.Println("os signal done")
+			log.Print("os signal done")
+		case <-ctx.Done():
+			log.Print("ctx done")
 		case <-ctxMongo.Done():
-			log.Println("mongo done")
+			log.Print("mongo done")
 		}
 
 		done <- true
@@ -132,23 +145,23 @@ func main() {
 			// Consumer == Handler // !command Command->execute(dto DTO): bool | analog service with NewService(ctx,...)
 			id, err := model.StringToID(string(d.Body))
 			if err != nil {
-				errLog.Printf("error string to id: %s", err)
+				logErr.Error().Err(err).Caller().Send()
 				return rabbitmq.NackRequeue
 			}
 
-			infLog.Printf("received a place id: %s", id)
+			log.Printf("received a place id: %s", id)
 
 			place, err := placeService.Find(id)
 			if err != nil {
 				if !d.Redelivered {
-					errLog.Printf("error Find place with id: %s, discard", id)
+					logErr.Error().Err(err).Caller().Str("id", id.String()).Msg("discard")
 					return rabbitmq.NackDiscard
 				}
-				errLog.Printf("error Find place with id: %s", id)
+				logErr.Error().Err(err).Caller().Str("id", id.String()).Msg("requeue")
 				return rabbitmq.NackRequeue
 			}
 
-			infLog.Printf("TODO send to elastic: %s", place.ID)
+			log.Printf("TODO send to elastic: %s", place.ID)
 			return rabbitmq.Ack
 		},
 
@@ -164,11 +177,11 @@ func main() {
 		rabbitmq.WithConsumeOptionsQOSPrefetch(*prefetchCount),
 	)
 	if err != nil {
-		errLog.Fatal(err)
+		logErr.Fatal().Err(err).Caller().Send()
 	}
 
 	// Awaiting done chan
 	<-done
 
-	infLog.Printf("consumer %s exiting", consumerTag)
+	log.Printf("consumer %s exiting", consumerTag)
 }
