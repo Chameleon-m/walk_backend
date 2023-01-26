@@ -11,12 +11,12 @@ var _ rabbitmq.Logger = (*logLogging)(nil)
 
 // logLogging ...
 type logLogging struct {
-	logger      log.Logger
-	loggerError log.Logger
+	logger      *log.Logger
+	loggerError *log.Logger
 }
 
 // NewLogLogger create new logger
-func NewLogLogger(log, errLog log.Logger) logLogging {
+func NewLogLogger(log, errLog *log.Logger) logLogging {
 	return logLogging{
 		logger:      log,
 		loggerError: errLog,
@@ -49,4 +49,6 @@ func (l logLogging) Debugf(format string, v ...interface{}) {
 }
 
 // Tracef ...
-func (l logLogging) Tracef(format string, v ...interface{}) {}
+func (l logLogging) Tracef(format string, v ...interface{}) {
+	l.logger.Printf(fmt.Sprintf("TRACE: %s", format), v...)
+}
