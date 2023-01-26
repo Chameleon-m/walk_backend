@@ -24,19 +24,11 @@
 package main
 
 import (
-	"os"
-
 	"walk_backend/internal/pkg/app"
 	httpserver "walk_backend/internal/pkg/component/http_server"
 
-	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
-
-func init() {
-	w := zerolog.ConsoleWriter{Out: os.Stderr, NoColor: true}
-	log.Logger = log.Output(w)
-}
 
 func main() {
 

@@ -72,6 +72,11 @@ func New() (*App, error) {
 	gin.DisableConsoleColor()
 	gin.SetMode(app.env.GetMust(gin.EnvGinMode)) // GIN_MODE
 
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	if app.env.GetMust(gin.EnvGinMode) == gin.DebugMode {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	}
+
 	// Create context that listens for the interrupt signal from the OS.
 	app.ctxSignal, app.ctxSignalStop = signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	app.ctx, app.ctxCancel = context.WithCancel(app.ctxSignal)
@@ -161,8 +166,8 @@ func New() (*App, error) {
 		logger.WithDefaultLevel(defaultLevel),
 		logger.WithClientErrorLevel(clientLevel),
 		logger.WithServerErrorLevel(serverLevel),
-		logger.WithLogger(func(c *gin.Context, log zerolog.Logger) zerolog.Logger {
-			return log.With().
+		logger.WithLogger(func(c *gin.Context, l zerolog.Logger) zerolog.Logger {
+			return l.With().
 				Str("id", c.GetHeader("X-Request-ID")).
 				Logger()
 		}),
@@ -354,7 +359,7 @@ func (app *App) initRabitMQ() error {
 		rabbitmq.Config{
 			Dial: amqp091.DefaultDial(30 * time.Second),
 		},
-		rabbitmq.WithPublisherOptionsLogger(rabbitmqLog.NewZerologLogger(log.Logger)),
+		rabbitmq.WithPublisherOptionsLogger(rabbitmqLog.NewZerologLogger(log.Logger, log.Logger)),
 	)
 	if err != nil {
 		return err
