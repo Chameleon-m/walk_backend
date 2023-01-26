@@ -13,6 +13,14 @@ import (
 	"golang.org/x/net/context"
 )
 
+type AuthHandlerInterface interface {
+	HandlerInterface
+	SignUpHandler(c *gin.Context)
+	SignInHandler(c *gin.Context)
+	RefreshHandler(c *gin.Context)
+	SignOutHandler(c *gin.Context)
+}
+
 // AuthHandler auth handler
 type AuthHandler struct {
 	service   service.AuthServiceInteface

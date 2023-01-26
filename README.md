@@ -36,6 +36,7 @@ export API_PORT=8080
 
 # GIN
 export PORT=8080
+# debug release test
 export GIN_MODE=debug
 
 # SESSION
