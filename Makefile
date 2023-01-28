@@ -62,7 +62,11 @@ swagger-serve-f:
 
 test:
 	go test -tags testing ./...
-
+test-race:
+	go test -tags -race -vet=off testing ./...
 test-coverage:
 	go test -tags testing ./... -coverprofile=coverage.out
 	go tool cover -html=coverage.out -o coverage.html
+
+lints:
+	golangci-lint run ./...
