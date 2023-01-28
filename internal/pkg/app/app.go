@@ -233,6 +233,7 @@ func (app *App) Run() error {
 	defer app.ctxCancel()
 	defer app.redisCtxCancel()
 	defer app.mongoCtxCancel()
+	defer app.initRedisDefer()
 	defer app.initMongoDBDefer()
 	defer app.initRabbitMQDefer()
 
