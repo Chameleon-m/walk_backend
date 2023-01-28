@@ -62,7 +62,7 @@ func (handler *AuthHandler) SignUpHandler(c *gin.Context) {
 
 	_, err := handler.service.Registration(dto)
 	if err != nil {
-		c.Error(err)
+		_ = c.Error(err)
 		if errors.Is(err, service.ErrInvalidUsernameOrPassword) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
@@ -99,7 +99,7 @@ func (handler *AuthHandler) SignInHandler(c *gin.Context) {
 
 	user, err := handler.service.Login(dto)
 	if err != nil {
-		c.Error(err)
+		_ = c.Error(err)
 		if errors.Is(err, service.ErrInvalidUsernameOrPassword) {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
@@ -110,14 +110,18 @@ func (handler *AuthHandler) SignInHandler(c *gin.Context) {
 
 	sessionTokenNew, err := handler.service.GenerateToken()
 	if err != nil {
-		c.Error(err)
+		_ = c.Error(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generate token"})
 		return
 	}
 	session := sessions.Default(c)
 	session.Set("username", user.Username)
 	session.Set("token", sessionTokenNew)
-	session.Save()
+	if err := session.Save(); err != nil {
+		_ = c.Error(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error session save"})
+		return
+	}
 
 	data := handler.presenter.Make(sessionTokenNew)
 	c.JSON(http.StatusOK, gin.H{"data": data})
@@ -147,12 +151,16 @@ func (handler *AuthHandler) RefreshHandler(c *gin.Context) {
 
 	sessionTokenNew, err := handler.service.GenerateToken()
 	if err != nil {
-		c.Error(err)
+		_ = c.Error(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generate token"})
 		return
 	}
 	session.Set("token", sessionTokenNew)
-	session.Save()
+	if err := session.Save(); err != nil {
+		_ = c.Error(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error session save"})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "New session issued"})
 }
@@ -169,7 +177,11 @@ func (handler *AuthHandler) RefreshHandler(c *gin.Context) {
 func (handler *AuthHandler) SignOutHandler(c *gin.Context) {
 	session := sessions.Default(c)
 	session.Clear()
-	session.Save()
+	if err := session.Save(); err != nil {
+		_ = c.Error(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error session save"})
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{"message": "Signed out..."})
 }
 
