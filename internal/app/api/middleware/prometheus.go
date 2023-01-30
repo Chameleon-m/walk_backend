@@ -5,7 +5,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 var totalRequests = prometheus.NewCounterVec(
@@ -16,7 +15,7 @@ var totalRequests = prometheus.NewCounterVec(
 	[]string{"path"},
 )
 
-var httpDuration = promauto.NewHistogramVec(
+var httpDuration = prometheus.NewHistogramVec(
 	prometheus.HistogramOpts{
 		Name: "http_response_time_seconds",
 		Help: "Duration of HTTP requests",
@@ -33,9 +32,7 @@ var httpCodeCounter = prometheus.NewCounterVec(
 )
 
 func init() {
-	prometheus.Register(totalRequests)
-	prometheus.Register(httpCodeCounter)
-	prometheus.Register(httpDuration)
+	prometheus.MustRegister(totalRequests, httpDuration, httpCodeCounter)
 }
 
 // Prometheus middleware
