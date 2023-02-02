@@ -33,6 +33,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
+	"golang.org/x/sync/errgroup"
 )
 
 type App struct {
@@ -77,26 +78,37 @@ func New() (*App, error) {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
 
+	log.Print("Started")
+
 	// Create context that listens for the interrupt signal from the OS.
 	app.ctxSignal, app.ctxSignalStop = signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	app.ctx, app.ctxCancel = context.WithCancel(app.ctxSignal)
 
 	app.handlers = handlers.New(app)
 
+	// TODO gCtx // or components New, Start, defer Stop on Run
+	g, _ := errgroup.WithContext(app.ctx)
+
 	// Redis
-	if err = app.initRedis(); err != nil {
-		return nil, err
-	}
-	// DB mongo
-	if err = app.initMongoDB(); err != nil {
-		return nil, err
-	}
+	g.Go(func() error { return app.initRedis() })
+
+	g.Go(func() error {
+		// DB mongo
+		if err := app.initMongoDB(); err != nil {
+			return err
+		}
+		// Session // MongoDB store
+		if err = app.initSession(); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
 	// RabbitMQ
-	if err = app.initRabitMQ(); err != nil {
-		return nil, err
-	}
-	// Session
-	if err = app.initSession(); err != nil {
+	g.Go(func() error { return app.initRabbitMQ() })
+
+	if err := g.Wait(); err != nil {
 		return nil, err
 	}
 
@@ -215,16 +227,15 @@ func New() (*App, error) {
 
 func (app *App) Run() error {
 
+	log.Print("Run started")
+
 	defer app.ctxSignalStop()
 	defer app.ctxCancel()
 	defer app.redisCtxCancel()
 	defer app.mongoCtxCancel()
+	defer app.initRedisDefer()
 	defer app.initMongoDBDefer()
 	defer app.initRabbitMQDefer()
-
-	if err := app.initMongoDBPing(); err != nil {
-		return err
-	}
 
 	done := make(chan bool, 1)
 	go func() {
@@ -266,13 +277,13 @@ func (app *App) Run() error {
 
 	// Restore default behavior on the interrupt signal and notify user of shutdown.
 	app.ctxSignalStop()
-	log.Print("shutting down gracefully, press Ctrl+C again to force")
+	log.Print("Shutting down gracefully, press Ctrl+C again to force")
 
 	// The context is used to inform the server it has 5 seconds to finish the request it is currently handling
 	ctxShutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := server.Shutdown(ctxShutdown); err != nil {
-		log.Panic().Err(err).Msg("Server forced to shutdown")
+		log.Panic().Err(err).Msg("server forced to shutdown")
 	}
 
 	log.Print("Server exiting")
@@ -296,7 +307,9 @@ func (app *App) GetContext() context.Context {
 
 func (app *App) initRedis() error {
 
-	app.redisCtx, app.redisCtxCancel = context.WithCancel(app.ctxSignal)
+	log.Print("Start connected to Redis")
+
+	app.redisCtx, app.redisCtxCancel = context.WithCancel(app.ctx)
 
 	addrRedis := fmt.Sprintf("%s:%s", app.env.GetMust("REDIS_HOST"), app.env.GetMust("REDIS_PORT"))
 	app.redisClient = redis.NewClient(&redis.Options{
@@ -308,18 +321,34 @@ func (app *App) initRedis() error {
 
 	log.Print("Connected to Redis")
 
-	status := app.redisClient.Ping(app.redisCtx)
-	log.Print(status)
+	log.Print("Redis status: PING")
+	status, err := app.redisClient.Ping(app.redisCtx).Result()
+	if err != nil {
+		return err
+	}
+	log.Print("Redis status: " + status)
 
 	return nil
 }
 
+func (app *App) initRedisDefer() func() {
+	return func() {
+		if app.redisClient != nil {
+			if statusCmd, err := app.redisClient.ShutdownSave(app.redisCtx).Result(); err != nil {
+				log.Error().Err(err).Msg(statusCmd)
+			}
+		}
+	}
+}
+
 func (app *App) initMongoDB() error {
+
+	log.Print("Start connected to MongoDB")
 
 	var err error
 	mongoURI := app.env.GetMust("MONGO_URI")
 	app.mongoDefaultDb = app.env.GetMust("MONGO_INITDB_DATABASE")
-	app.mongoCtx, app.mongoCtxCancel = context.WithCancel(app.ctxSignal)
+	app.mongoCtx, app.mongoCtxCancel = context.WithCancel(app.ctx)
 
 	mongoClientOptions := options.Client()
 	mongoClientOptions.ApplyURI(mongoURI)
@@ -330,13 +359,21 @@ func (app *App) initMongoDB() error {
 
 	log.Print("Connected to MongoDB")
 
+	log.Print("MongoDB PING")
+	if err := app.initMongoDBPing(); err != nil {
+		return err
+	}
+	log.Print("MongoDB PONG")
+
 	return nil
 }
 
 func (app *App) initMongoDBDefer() func() {
 	return func() {
-		if err := app.mongoClient.Disconnect(app.mongoCtx); err != nil {
-			log.Printf("MongoDB: %s", err)
+		if app.mongoClient != nil {
+			if err := app.mongoClient.Disconnect(app.mongoCtx); err != nil {
+				log.Error().Err(err).Send()
+			}
 		}
 	}
 }
@@ -349,7 +386,9 @@ func (app *App) GetMongoDB() *mongo.Database {
 	return app.mongoClient.Database(app.mongoDefaultDb)
 }
 
-func (app *App) initRabitMQ() error {
+func (app *App) initRabbitMQ() error {
+
+	log.Print("Start connected to RabbitMQ")
 
 	var err error
 	rabbitMQURL := app.env.GetMust("RABBITMQ_URI")
@@ -372,11 +411,17 @@ func (app *App) initRabitMQ() error {
 
 func (app *App) initRabbitMQDefer() func() {
 	return func() {
-		app.rabbitmqPublisher.Close()
+		if app.rabbitmqPublisher != nil {
+			if err := app.rabbitmqPublisher.Close(); err != nil {
+				log.Error().Err(err).Send()
+			}
+		}
 	}
 }
 
 func (app *App) initSession() error {
+
+	log.Print("Start connected to Session store")
 
 	sessionSecret := app.env.GetMust("SESSION_SECRET")
 	sessionPath := app.env.GetMust("SESSION_PATH")
@@ -394,6 +439,8 @@ func (app *App) initSession() error {
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 	})
+
+	log.Print("Connected to Session store")
 
 	return nil
 }

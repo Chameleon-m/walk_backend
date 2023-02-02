@@ -57,14 +57,14 @@ func (handler *PlacesHandler) ListPlacesHandler(c *gin.Context) {
 
 	placeList, err := handler.service.ListPlaces()
 	if err != nil {
-		c.Error(err)
+		_ = c.Error(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	categoryList, err := handler.service.ListCategories()
 	if err != nil {
-		c.Error(err)
+		_ = c.Error(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	} else if len(categoryList) == 0 {
@@ -100,7 +100,7 @@ func (handler *PlacesHandler) NewPlaceHandler(c *gin.Context) {
 
 	id, err := handler.service.Create(dto)
 	if err != nil {
-		c.Error(err)
+		_ = c.Error(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -141,7 +141,7 @@ func (handler *PlacesHandler) UpdatePlaceHandler(c *gin.Context) {
 	}
 
 	if err := handler.service.Update(dto); err != nil {
-		c.Error(err)
+		_ = c.Error(err)
 		if errors.Is(err, model.ErrModelNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
@@ -187,7 +187,7 @@ func (handler *PlacesHandler) DeletePlaceHandler(c *gin.Context) {
 	}
 
 	if err := handler.service.Delete(placeID); err != nil {
-		c.Error(err)
+		_ = c.Error(err)
 		if errors.Is(err, model.ErrModelNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
@@ -231,7 +231,7 @@ func (handler *PlacesHandler) GetOnePlaceHandler(c *gin.Context) {
 
 	place, err := handler.service.Find(placeID)
 	if err != nil {
-		c.Error(err)
+		_ = c.Error(err)
 		if errors.Is(err, model.ErrModelNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
@@ -242,7 +242,7 @@ func (handler *PlacesHandler) GetOnePlaceHandler(c *gin.Context) {
 
 	category, err := handler.service.FindCategory(place.Category)
 	if err != nil {
-		c.Error(err)
+		_ = c.Error(err)
 		if errors.Is(err, model.ErrModelNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
@@ -277,14 +277,14 @@ func (handler *PlacesHandler) SearchPlacesHandler(c *gin.Context) {
 	search := c.Query("q")
 	placeList, err := handler.service.Search(search)
 	if err != nil {
-		c.Error(err)
+		_ = c.Error(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	categoryList, err := handler.service.ListCategories()
 	if err != nil {
-		c.Error(err)
+		_ = c.Error(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	} else if len(categoryList) == 0 {

@@ -5,9 +5,15 @@ name: Go
 
 on:
   push:
-    branches: [ "develop" ]
+    tags:
+      - v*
+    branches:
+      - master
+      - develop
   pull_request:
-    branches: [ "master" ]
+    branches:
+      - master
+      - develop
 
 jobs:
 
@@ -23,19 +29,13 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v3.5.0
       with:
-        go-version: 1.19
         go-version-file: go.mod
         cache: true
         cache-dependency-path: go.sum
         architecture: x64
 
-    - name: Code linting
-      run: |
-        go get -u golang.org/x/lint/golint
-        golint ./...
-
     - name: Build
       run: make build
 
-    - name: Test
-      run: make test
+    - name: Test race
+      run: make test-race
