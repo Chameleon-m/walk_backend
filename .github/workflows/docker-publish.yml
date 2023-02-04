@@ -1,0 +1,42 @@
+name: Docker image publish
+
+on:
+  push:
+    branches: [ "main" ]
+    # Publish semver tags as releases.
+    tags: [ 'v*.*.*' ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  REGISTRY: registry.digitalocean.com/walk-frontend
+  IMAGE_NAME_API: app-api
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+      
+      - name: Build container api image
+        run: docker build -f './deployments/docker/api/Dockerfile' -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_API }}:$(echo $GITHUB_SHA | head -c7) .
+
+      - name: Build container latest api image 
+        run: docker build -f './deployments/docker/api/Dockerfile' -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_API }}:latest .
+
+      - name: Log in to DigitalOcean Container Registry with short-lived credentials
+        run: doctl registry login --expiry-seconds 1200
+
+      - name: Push api image to DigitalOcean Container Registry
+        run: docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_API }}:$(echo $GITHUB_SHA | head -c7)
+
+      - name: Push latest api image to DigitalOcean Container Registry
+        run: docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_API }}:latest
