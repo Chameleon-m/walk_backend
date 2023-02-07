@@ -1,12 +1,14 @@
 ifneq (test, ${GIN_MODE})
-    migrateCommand := migrate -source file://migrations -database "${MONGO_URI}" -verbose
+    migrateArgs := -source file://migrations -database "${MONGO_URI}" -verbose
 else
-    migrateCommand := migrate -source file://migrations -database "${MONGO_URI_TEST}" -verbose
+    migrateArgs := -source file://migrations -database "${MONGO_URI_TEST}" -verbose
 endif
 
 BIN_DIR = $(PWD)/bin
 
 .PHONY: build
+
+$(VERBOSE).SILENT:
 
 clean:
 	rm -rf bin/*
@@ -39,19 +41,35 @@ build-mocks:
 	@~/go/bin/mockgen -source internal/app/service/auth_service_interface.go -destination internal/app/service/mock/auth_service_mock.go -package mock
 
 migrate-up:
-	$(migrateCommand) up $(if $n,$n,)
+	migrate $(migrateArgs) up $(if $n,$n,)
 migrate-down:
-	$(migrateCommand) down $(if $n,$n,)
+	migrate $(migrateArgs) down $(if $n,$n,)
 migrate-goto:
-	$(migrateCommand) goto $(v)
+	migrate $(migrateArgs) goto $(v)
 migrate-force:
-	$(migrateCommand) force $(v)
+	migrate $(migrateArgs) force $(v)
 migrate-drop:
-	$(migrateCommand) drop
+	migrate $(migrateArgs) drop
 migrate-version:
-	$(migrateCommand) version
+	migrate $(migrateArgs) version
 migrate-create-json:
-	$(migrateCommand) create -ext json -dir migrations $(name)
+	migrate $(migrateArgs) create -ext json -dir migrations $(name)
+
+# $(CURDIR) fix old docker version for Windows
+migrate-up-docker: 
+	docker run --name migrate-api --rm -i --volume="$(CURDIR)/migrations:/migrations" --network netApplication migrate/migrate:v4.15.2 $(migrateArgs) up $(if $n,$n,)
+migrate-down-docker:
+	docker run --name migrate-api --rm -i --volume="$(CURDIR)/migrations:/migrations" --network netApplication migrate/migrate:v4.15.2 $(migrateArgs) down $(if $n,$n,)
+migrate-goto-docker:
+	docker run --name migrate-api --rm -i --volume="$(CURDIR)/migrations:/migrations" --network netApplication migrate/migrate:v4.15.2 $(migrateArgs) goto $(v)
+migrate-force-docker:
+	docker run --name migrate-api --rm -i --volume="$(CURDIR)/migrations:/migrations" --network netApplication migrate/migrate:v4.15.2 $(migrateArgs) force $(v)
+migrate-drop-docker:
+	docker run --name migrate-api --rm -i --volume="$(CURDIR)/migrations:/migrations" --network netApplication migrate/migrate:v4.15.2 $(migrateArgs) drop
+migrate-version-docker:
+	docker run --name migrate-api --rm -i --volume="$(CURDIR)/migrations:/migrations" --network netApplication migrate/migrate:v4.15.2 $(migrateArgs) version
+migrate-create-json-docker:
+	docker run --name migrate-api --rm -i --volume="$(CURDIR)/migrations:/migrations" --network netApplication migrate/migrate:v4.15.2 $(migrateArgs) create -ext json -dir migrations $(name)
 
 swagger-generate:
 	swagger generate spec -o ./api/swagger.json
