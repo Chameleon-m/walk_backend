@@ -6,9 +6,6 @@ services:
     build:
       context: ../../../
       dockerfile: ./deployments/docker/api/Dockerfile
-      # cache_from:
-      #   - golang:1.19.4
-      #   - alpine:latest
     environment:
       MONGO_URI: ${MONGO_URI}
       MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}

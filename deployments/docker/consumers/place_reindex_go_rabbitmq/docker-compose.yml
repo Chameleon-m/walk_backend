@@ -6,9 +6,6 @@ services:
     build:
       context: ../../../../
       dockerfile: ./deployments/docker/consumers/place_reindex_go_rabbitmq/Dockerfile
-      # cache_from:
-      #   - golang:1.19.4
-      #   - alpine:latest
     environment:
       API_VERSION: ${API_VERSION}
       API_SCHEMA: ${API_SCHEMA}
