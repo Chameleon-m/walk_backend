@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	httpserver "walk_backend/internal/pkg/component/http_server"
+	"walk_backend/internal/pkg/httpserver"
 
 	"github.com/gin-gonic/gin"
 )

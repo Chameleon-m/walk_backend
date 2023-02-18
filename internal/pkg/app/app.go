@@ -15,57 +15,35 @@ import (
 	"walk_backend/internal/app/api/presenter"
 	"walk_backend/internal/app/repository"
 	"walk_backend/internal/app/service"
-	"walk_backend/internal/pkg/component/cache"
-	"walk_backend/internal/pkg/component/env"
-	httpserver "walk_backend/internal/pkg/component/http_server"
-	rabbitmqLog "walk_backend/internal/pkg/rabbitmqcustom"
+	"walk_backend/internal/pkg/cache"
+	"walk_backend/internal/pkg/components"
+	"walk_backend/internal/pkg/env"
+	"walk_backend/internal/pkg/httpserver"
 
 	"github.com/gin-contrib/logger"
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/mongo/mongodriver"
 	"github.com/gin-gonic/gin"
-	"github.com/go-redis/redis/v9"
+
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/rabbitmq/amqp091-go"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	rabbitmq "github.com/wagslane/go-rabbitmq"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"golang.org/x/sync/errgroup"
 )
 
 type App struct {
 	// handlers []*gin.HandlerFunc
-	handlers handlers.HandlersInterface
-	engine   *gin.Engine
-	env      env.EnvInterface
-
-	ctxSignal     context.Context
-	ctxSignalStop context.CancelFunc
-	ctx           context.Context
-	ctxCancel     context.CancelFunc
-
-	redisClient    *redis.Client
-	redisCtx       context.Context
-	redisCtxCancel context.CancelFunc
-
-	mongoClient    *mongo.Client
-	mongoCtx       context.Context
-	mongoCtxCancel context.CancelFunc
-	mongoDefaultDb string
-
-	rabbitmqPublisher *rabbitmq.Publisher
-
-	sessionStore sessions.Store
+	handlers  handlers.HandlersInterface
+	engine    *gin.Engine
+	env       env.EnvInterface
+	ctx       context.Context
+	ctxCancel context.CancelFunc
 }
 
 var _ httpserver.ServerInterface = (*App)(nil)
 
-func New() (*App, error) {
+func New() *App {
 
-	var err error
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, NoColor: true})
+	log.Print("Started")
 
 	app := &App{}
 	app.env = env.New()
@@ -78,62 +56,104 @@ func New() (*App, error) {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
 
-	log.Print("Started")
+	return app
+}
+
+func (app *App) Run() {
+
+	log.Print("Run started")
+	defer log.Print("Server exiting")
+
+	var err error
 
 	// Create context that listens for the interrupt signal from the OS.
-	app.ctxSignal, app.ctxSignalStop = signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	app.ctx, app.ctxCancel = context.WithCancel(app.ctxSignal)
+	ctxSignal, ctxSignalStop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer ctxSignalStop()
+
+	app.ctx, app.ctxCancel = context.WithCancel(context.Background())
+	defer app.ctxCancel()
 
 	app.handlers = handlers.New(app)
 
-	// TODO gCtx // or components New, Start, defer Stop on Run
-	g, _ := errgroup.WithContext(app.ctx)
+	g, gCtx := errgroup.WithContext(app.ctx)
+
+	// TODO create logger interface and inject logger
 
 	// Redis
-	g.Go(func() error { return app.initRedis() })
-
-	g.Go(func() error {
-		// DB mongo
-		if err := app.initMongoDB(); err != nil {
-			return err
+	redisComponent := components.NewRedis(
+		app.env.GetMust("REDIS_HOST"),
+		app.env.GetMust("REDIS_PORT"),
+		app.env.GetMust("REDIS_USERNAME"),
+		app.env.GetMust("REDIS_PASSWORD"),
+	)
+	g.Go(func() error { return redisComponent.Start(gCtx) })
+	defer func() {
+		if err := redisComponent.Stop(context.TODO()); err != nil {
+			log.Error().Err(err).Caller(0).Send()
 		}
-		// Session // MongoDB store
-		if err = app.initSession(); err != nil {
-			return err
-		}
-
-		return nil
-	})
+	}()
 
 	// RabbitMQ
-	g.Go(func() error { return app.initRabbitMQ() })
+	rabbitMqPublisherComponent := components.NewRabbitMQ(app.env.GetMust("RABBITMQ_URI"))
+	g.Go(func() error { return rabbitMqPublisherComponent.Start(gCtx) })
+	defer func() {
+		if err := rabbitMqPublisherComponent.Stop(context.TODO()); err != nil {
+			log.Error().Err(err).Caller(0).Send()
+		}
+	}()
+
+	// DB mongo
+	mongoDefaultDB := app.env.GetMust("MONGO_INITDB_DATABASE")
+	mongoDBComponent := components.NewMongoDB(app.env.GetMust("MONGO_URI"))
+	g.Go(func() error { return mongoDBComponent.Start(gCtx) })
+	defer func() {
+		if err := mongoDBComponent.Stop(context.TODO()); err != nil {
+			log.Error().Err(err).Caller(0).Send()
+		}
+	}()
+
+	<-mongoDBComponent.Ready()
+	// Session // MongoDB store
+	sessionComponent := components.NewSessionGinMongoDB(
+		app.env.GetMust("SESSION_SECRET"),
+		app.env.GetMust("SESSION_PATH"),
+		app.env.GetMust("SESSION_DOMAIN"),
+		app.env.GetMustInt("SESSION_MAX_AGE"),
+		app.env.GetMust("SESSION_MONGO_DATABASE"),
+		mongoDBComponent.GetClient(),
+	)
+	g.Go(func() error { return sessionComponent.Start(gCtx) })
 
 	if err := g.Wait(); err != nil {
-		return nil, err
+		log.Fatal().Err(err).Caller(0).Send()
 	}
 
+	mongoClient := mongoDBComponent.GetClient()
+	rabbitMQClient := rabbitMqPublisherComponent.GetClient()
+	redisClient := redisComponent.GetClient()
+
 	// auth
-	collectionUsers := app.GetMongoDB().Collection("users")
+	collectionUsers := mongoClient.Database(mongoDefaultDB).Collection("users")
 	userMongoRepository := repository.NewUserMongoRepository(app.ctx, collectionUsers)
 	authService := service.NewDefaultAuthService(userMongoRepository)
 	tokenPresenter := presenter.NewTokenPresenter()
 	app.handlers.SetAuthHandler(handlers.NewAuthHandler(app.ctx, authService, tokenPresenter))
 
 	// category
-	collectionCategories := app.GetMongoDB().Collection("categories")
+	collectionCategories := mongoClient.Database(mongoDefaultDB).Collection("categories")
 	categoryMongoRepository := repository.NewCategoryMongoRepository(app.ctx, collectionCategories)
 	categoryService := service.NewDefaultCategoryService(categoryMongoRepository)
 	categoryPresenter := presenter.NewCategoryPresenter()
 	app.handlers.SetCategoriesHandler(handlers.NewCategoriesHandler(app.ctx, categoryService, categoryPresenter))
 
 	// place
-	collectionPlaces := app.GetMongoDB().Collection("places")
+	collectionPlaces := mongoClient.Database(mongoDefaultDB).Collection("places")
 	placeMongoRepository := repository.NewPlaceMongoRepository(app.ctx, collectionPlaces)
-	placeCacheRedisRepository := repository.NewPlaceCacheRedisRepository(app.ctx, app.redisClient)
+	placeCacheRedisRepository := repository.NewPlaceCacheRedisRepository(app.ctx, redisClient)
 	placeQueueRabbitRepository := repository.NewPlaceQueueRabbitRepository(
-		app.rabbitmqPublisher,
-		app.rabbitmqPublisher.NotifyReturn(),
-		app.rabbitmqPublisher.NotifyPublish(),
+		rabbitMQClient,
+		rabbitMQClient.NotifyReturn(),
+		rabbitMQClient.NotifyPublish(),
 	)
 	keyBuilder := cache.NewKeyBuilderDefault()
 	placeService := service.NewDefaultPlaceService(
@@ -155,20 +175,20 @@ func New() (*App, error) {
 	// zerolog midelleware
 	fileLog, err := os.Create("debug.log")
 	if err != nil {
-		return nil, err
+		log.Fatal().Err(err).Caller(0).Send()
 	}
 
 	defaultLevel, err := zerolog.ParseLevel(app.env.GetMust("LOG_DEFAULT_LEVEL"))
 	if err != nil {
-		return nil, err
+		log.Fatal().Err(err).Caller(0).Send()
 	}
 	clientLevel, err := zerolog.ParseLevel(app.env.GetMust("LOG_CLIENT_LEVEL"))
 	if err != nil {
-		return nil, err
+		log.Fatal().Err(err).Caller(0).Send()
 	}
 	serverLevel, err := zerolog.ParseLevel(app.env.GetMust("LOG_SERVER_LEVEL"))
 	if err != nil {
-		return nil, err
+		log.Fatal().Err(err).Caller(0).Send()
 	}
 
 	app.engine.Use(logger.SetLogger(
@@ -199,7 +219,7 @@ func New() (*App, error) {
 
 	// session midelleware
 	sessionName := app.env.GetMust("SESSION_NAME")
-	sessionMidlleware := middleware.Session(sessionName, app.sessionStore)
+	sessionMidlleware := middleware.Session(sessionName, sessionComponent.GetClient())
 
 	// auth midelleware
 	authMiddleware := middleware.Auth()
@@ -222,36 +242,16 @@ func New() (*App, error) {
 	})
 	app.engine.GET("/prometheus", gin.WrapH(promhttp.Handler()))
 
-	return app, nil
-}
-
-func (app *App) Run() error {
-
-	log.Print("Run started")
-
-	defer app.ctxSignalStop()
-	defer app.ctxCancel()
-	defer app.redisCtxCancel()
-	defer app.mongoCtxCancel()
-	defer app.initRedisDefer()
-	defer app.initMongoDBDefer()
-	defer app.initRabbitMQDefer()
-
-	done := make(chan bool, 1)
+	done := make(chan struct{}, 1)
 	go func() {
 		select {
-		// Listen for the interrupt signal.
-		case <-app.ctxSignal.Done():
+		case <-ctxSignal.Done():
 			log.Print("os signal done")
 		case <-app.ctx.Done():
-			log.Print("ctx done")
-		case <-app.mongoCtx.Done():
-			log.Print("mongo done")
-		case <-app.redisCtx.Done():
-			log.Print("redis done")
+			log.Print("app ctx done")
 		}
 
-		done <- true
+		done <- struct{}{}
 	}()
 
 	// build server
@@ -261,7 +261,7 @@ func (app *App) Run() error {
 		Handler: app.engine,
 		// TODO
 	}
-	// srv.RegisterOnShutdown()
+	// server.RegisterOnShutdown(func() {})
 
 	// Initializing the server in a goroutine so that it won't block the graceful shutdown handling below
 	go func() {
@@ -276,7 +276,6 @@ func (app *App) Run() error {
 	<-done
 
 	// Restore default behavior on the interrupt signal and notify user of shutdown.
-	app.ctxSignalStop()
 	log.Print("Shutting down gracefully, press Ctrl+C again to force")
 
 	// The context is used to inform the server it has 5 seconds to finish the request it is currently handling
@@ -285,10 +284,6 @@ func (app *App) Run() error {
 	if err := server.Shutdown(ctxShutdown); err != nil {
 		log.Panic().Err(err).Msg("server forced to shutdown")
 	}
-
-	log.Print("Server exiting")
-
-	return nil
 }
 
 // GetEnvironment return debug release test
@@ -303,144 +298,4 @@ func (app *App) IsDebug() bool {
 
 func (app *App) GetContext() context.Context {
 	return app.ctx
-}
-
-func (app *App) initRedis() error {
-
-	log.Print("Start connected to Redis")
-
-	app.redisCtx, app.redisCtxCancel = context.WithCancel(app.ctx)
-
-	addrRedis := fmt.Sprintf("%s:%s", app.env.GetMust("REDIS_HOST"), app.env.GetMust("REDIS_PORT"))
-	app.redisClient = redis.NewClient(&redis.Options{
-		Addr:     addrRedis,
-		Username: app.env.GetMust("REDIS_USERNAME"),
-		Password: app.env.GetMust("REDIS_PASSWORD"),
-		DB:       0, // use default DB
-	})
-
-	log.Print("Connected to Redis")
-
-	log.Print("Redis status: PING")
-	status, err := app.redisClient.Ping(app.redisCtx).Result()
-	if err != nil {
-		return err
-	}
-	log.Print("Redis status: " + status)
-
-	return nil
-}
-
-func (app *App) initRedisDefer() func() {
-	return func() {
-		if app.redisClient != nil {
-			if statusCmd, err := app.redisClient.ShutdownSave(app.redisCtx).Result(); err != nil {
-				log.Error().Err(err).Msg(statusCmd)
-			}
-		}
-	}
-}
-
-func (app *App) initMongoDB() error {
-
-	log.Print("Start connected to MongoDB")
-
-	var err error
-	mongoURI := app.env.GetMust("MONGO_URI")
-	app.mongoDefaultDb = app.env.GetMust("MONGO_INITDB_DATABASE")
-	app.mongoCtx, app.mongoCtxCancel = context.WithCancel(app.ctx)
-
-	mongoClientOptions := options.Client()
-	mongoClientOptions.ApplyURI(mongoURI)
-	app.mongoClient, err = mongo.Connect(app.mongoCtx, mongoClientOptions)
-	if err != nil {
-		return err
-	}
-
-	log.Print("Connected to MongoDB")
-
-	log.Print("MongoDB PING")
-	if err := app.initMongoDBPing(); err != nil {
-		return err
-	}
-	log.Print("MongoDB PONG")
-
-	return nil
-}
-
-func (app *App) initMongoDBDefer() func() {
-	return func() {
-		if app.mongoClient != nil {
-			if err := app.mongoClient.Disconnect(app.mongoCtx); err != nil {
-				log.Error().Err(err).Send()
-			}
-		}
-	}
-}
-
-func (app *App) initMongoDBPing() error {
-	return app.mongoClient.Ping(app.mongoCtx, readpref.Primary())
-}
-
-func (app *App) GetMongoDB() *mongo.Database {
-	return app.mongoClient.Database(app.mongoDefaultDb)
-}
-
-func (app *App) initRabbitMQ() error {
-
-	log.Print("Start connected to RabbitMQ")
-
-	var err error
-	rabbitMQURL := app.env.GetMust("RABBITMQ_URI")
-
-	app.rabbitmqPublisher, err = rabbitmq.NewPublisher(
-		rabbitMQURL,
-		rabbitmq.Config{
-			Dial: amqp091.DefaultDial(30 * time.Second),
-		},
-		rabbitmq.WithPublisherOptionsLogger(rabbitmqLog.NewZerologLogger(log.Logger, log.Logger)),
-	)
-	if err != nil {
-		return err
-	}
-
-	log.Print("Connected to RabbitMQ")
-
-	return nil
-}
-
-func (app *App) initRabbitMQDefer() func() {
-	return func() {
-		if app.rabbitmqPublisher != nil {
-			if err := app.rabbitmqPublisher.Close(); err != nil {
-				log.Error().Err(err).Send()
-			}
-		}
-	}
-}
-
-func (app *App) initSession() error {
-
-	log.Print("Start connected to Session store")
-
-	sessionSecret := app.env.GetMust("SESSION_SECRET")
-	sessionPath := app.env.GetMust("SESSION_PATH")
-	sessionDomain := app.env.GetMust("SESSION_DOMAIN")
-	sessionMaxAge := app.env.GetMustInt("SESSION_MAX_AGE")
-
-	// session store
-	colectionSessions := app.GetMongoDB().Collection("sessions")
-	app.sessionStore = mongodriver.NewStore(colectionSessions, sessionMaxAge, false, []byte(sessionSecret))
-	app.sessionStore.Options(sessions.Options{
-		Path:     sessionPath,
-		Domain:   sessionDomain,
-		MaxAge:   sessionMaxAge,
-		Secure:   true,
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-	})
-
-	log.Print("Connected to Session store")
-
-	return nil
 }

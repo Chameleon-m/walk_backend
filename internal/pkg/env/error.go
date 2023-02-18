@@ -27,7 +27,7 @@ func (e *envError) Error() string {
 	if e == nil {
 		return "<nil>"
 	}
-	s := "env name" + e.EnvName
+	s := "env name " + e.EnvName
 	s += "=" + e.EnvValue
 	s += " " + e.Err.Error()
 	if e.ErrParent != nil {

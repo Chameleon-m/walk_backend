@@ -11,7 +11,7 @@ import (
 	"walk_backend/internal/app/model"
 	"walk_backend/internal/app/repository"
 	"walk_backend/internal/app/service"
-	"walk_backend/internal/pkg/component/env"
+	"walk_backend/internal/pkg/env"
 	rabbitmqLog "walk_backend/internal/pkg/rabbitmqcustom"
 
 	"github.com/rs/zerolog"
@@ -34,14 +34,6 @@ func main() {
 
 	env := env.New()
 
-	// zerolog.TimestampFieldName = "t"
-	// zerolog.LevelFieldName = "l"
-	// zerolog.MessageFieldName = "m"
-	// zerolog.ErrorFieldName = "e"
-	// zerolog.CallerFieldName = "c"
-	// zerolog.ErrorStackFieldName = "s"
-	// zerolog.DisableSampling(true)
-
 	log := zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout, NoColor: true}).With().Timestamp().Logger()
 	logErr := zerolog.New(zerolog.ConsoleWriter{Out: os.Stderr, NoColor: true}).With().Timestamp().Logger()
 
@@ -53,6 +45,9 @@ func main() {
 	// Create context that listens for the interrupt signal from the OS.
 	ctxSignal, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	// ENV
 	workersCount := env.GetMustInt("RABBITMQ_CONSUMERS_PLACE_REINDEX_COUNT")
@@ -68,18 +63,16 @@ func main() {
 	routingKey := env.GetMust("RABBITMQ_ROUTING_PLACE_KEY")
 
 	// DB
-	ctxMongo, cancel := context.WithCancel(ctxSignal)
-	defer cancel()
-	mongoClient, err := mongo.Connect(ctxMongo, options.Client().ApplyURI(mongoURI))
+	mongoClient, err := mongo.Connect(ctx, options.Client().ApplyURI(mongoURI))
 	if err != nil {
 		logErr.Fatal().Err(err).Caller().Send()
 	}
 	defer func() {
-		if err = mongoClient.Disconnect(ctxMongo); err != nil {
+		if err = mongoClient.Disconnect(ctx); err != nil {
 			log.Info().Err(err).Caller().Send()
 		}
 	}()
-	if err = mongoClient.Ping(ctxMongo, readpref.Primary()); err != nil {
+	if err = mongoClient.Ping(ctx, readpref.Primary()); err != nil {
 		logErr.Fatal().Err(err).Caller().Send()
 	}
 	log.Print("connected to MongoDB")
@@ -111,9 +104,6 @@ func main() {
 
 	log.Print("Connected to RabbitMQ")
 
-	ctx, cancel := context.WithCancel(ctxSignal)
-	defer cancel()
-
 	// category
 	collectionCategories := mongoClient.Database(mongoDB).Collection("categories")
 	categoryMongoRepository := repository.NewCategoryMongoRepository(ctx, collectionCategories)
@@ -124,19 +114,16 @@ func main() {
 	placeQueueRabbitRepository := repository.NewPlaceQueueRabbitRepository(publisher, notifyReturn, notifyPublish)
 	placeService := service.NewDefaultPlaceService(placeMongoRepository, categoryMongoRepository, placeQueueRabbitRepository, nil, nil)
 
-	done := make(chan bool, 1)
+	done := make(chan struct{}, 1)
 	go func() {
 		select {
-		// Listen for the interrupt signal.
 		case <-ctxSignal.Done():
 			log.Print("os signal done")
 		case <-ctx.Done():
 			log.Print("ctx done")
-		case <-ctxMongo.Done():
-			log.Print("mongo done")
 		}
 
-		done <- true
+		done <- struct{}{}
 	}()
 
 	err = consumer.StartConsuming(

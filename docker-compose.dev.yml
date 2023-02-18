@@ -13,9 +13,8 @@ services:
   #     - ./deployments/docker/nginx/conf.d/api.conf:/etc/nginx/conf.d/api.conf:ro
   #     - nginxLogs:/var/log/nginx
   #   environment:
-  #     API_VERSION: ${API_VERSION}
   #     API_SCHEMA: ${API_SCHEMA}
-  #     API_HOST: ${API_HOST}
+  #     API_HOST: host.docker.internal
   #     API_PORT: ${API_PORT}
 
   rabbitmq:
@@ -24,15 +23,11 @@ services:
       service: rabbitmq
     volumes:
       - rabbitmqLogs:/var/log/rabbitmq
-    environment:
-      API_VERSION: ${API_VERSION}
 
   mongo-replica-setup:
     extends:
       file: ./deployments/docker/common.yml
       service: mongo-replica-setup
-    environment:
-      API_VERSION: ${API_VERSION}
     depends_on:
       mongo1:
         condition: service_healthy
@@ -43,8 +38,6 @@ services:
       service: mongo1
     volumes:
       - mongoLogs:/var/log/mongodb
-    environment:
-      API_VERSION: ${API_VERSION}
 
   redis:
     extends:
@@ -67,15 +60,15 @@ services:
       API_HOST: ${API_HOST}
       API_PORT: ${API_PORT}
 
-  telegraf:
-    extends:
-      file: ./deployments/docker/common.yml
-      service: telegraf
-    environment:
-      API_VERSION: ${API_VERSION}
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock # Linux
-      - //var/run/docker.sock:/var/run/docker.sock # Windows WSL 2 engine
+  # telegraf:
+  #   extends:
+  #     file: ./deployments/docker/common.yml
+  #     service: telegraf
+  #   environment:
+  #     API_VERSION: ${API_VERSION}
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock # Linux
+  #     - //var/run/docker.sock:/var/run/docker.sock # Windows WSL 2 engine
 
   grafana:
     extends:
@@ -97,11 +90,11 @@ volumes:
   redisData:
   redisLogs:
   prometheusData:
-  # nginxLogs:
-  #   name: nginxLogs
+  nginxLogs:
+    name: nginxLogs
 
 networks:
   netApplication:
     name: netApplication
-  # netNginx:
-  #   name: netNginx
+  netNginx:
+    name: netNginx
