@@ -5,3 +5,4 @@ vendor/
 file.key
 coverage.out
 coverage.html
+config/config.yaml

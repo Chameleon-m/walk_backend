@@ -2,15 +2,33 @@ package components
 
 import (
 	"context"
+	"flag"
+	"fmt"
 	"sync"
 	"time"
 
 	rabbitmqLog "walk_backend/internal/pkg/rabbitmqcustom"
 
 	"github.com/rabbitmq/amqp091-go"
-	"github.com/rs/zerolog/log"
+	"github.com/rs/zerolog"
 	rabbitmq "github.com/wagslane/go-rabbitmq"
 )
+
+type RabbitMQConfig struct {
+	URI string `yaml:"uri" env:"RABBITMQ_URI" env-description:"RabbitMQ connection URI"`
+}
+
+func (cfg *RabbitMQConfig) RegisterFlags(fs *flag.FlagSet) {
+	fs.StringVar(&cfg.URI, "rabbitmq-uri", cfg.URI, "RabbitMQ connection URI")
+}
+
+func (cfg *RabbitMQConfig) Validate() error {
+	// TODO
+	if cfg.URI == "" {
+		return fmt.Errorf("invalid URI")
+	}
+	return nil
+}
 
 var _ ComponentInterface = (*rabbitMQComponent)(nil)
 
@@ -20,13 +38,15 @@ type rabbitMQComponent struct {
 	m                 sync.Mutex
 	stop              bool
 	ready             chan struct{}
+	log               zerolog.Logger
 }
 
-func NewRabbitMQ(uri string) *rabbitMQComponent {
+func NewRabbitMQ(name string, log zerolog.Logger, uri string) *rabbitMQComponent {
 	return &rabbitMQComponent{
 		rabbitMQURL: uri,
 		ready:       make(chan struct{}, 1),
 		stop:        false,
+		log:         log.With().Str("component", name).Logger(),
 	}
 }
 
@@ -45,7 +65,7 @@ func (c *rabbitMQComponent) Start(ctx context.Context) error {
 	c.m.Lock()
 	defer c.m.Unlock()
 
-	log.Print("Start connected to RabbitMQ")
+	c.log.Print("Start connected to RabbitMQ")
 
 	var err error
 
@@ -54,19 +74,19 @@ func (c *rabbitMQComponent) Start(ctx context.Context) error {
 		rabbitmq.Config{
 			Dial: amqp091.DefaultDial(30 * time.Second),
 		},
-		rabbitmq.WithPublisherOptionsLogger(rabbitmqLog.NewZerologLogger(log.Logger, log.Logger)),
+		rabbitmq.WithPublisherOptionsLogger(rabbitmqLog.NewZerologLogger(c.log, c.log)),
 	)
 	if err != nil {
 		return err
 	}
 
-	log.Print("Connected to RabbitMQ")
+	c.log.Print("Connected to RabbitMQ")
 
 	c.stop = false
 
 	c.ready <- struct{}{}
 	close(c.ready)
-	log.Print("Rabbit READY")
+	c.log.Print("Rabbit READY")
 
 	return nil
 }
@@ -75,17 +95,16 @@ func (c *rabbitMQComponent) Stop(ctx context.Context) error {
 	c.m.Lock()
 	defer c.m.Unlock()
 	if !c.stop {
-		log.Print("Stop Rabbit component")
+		c.log.Print("Stop Rabbit component")
 		// TODO Data race
 		// github.com/wagslane/go-rabbitmq@v0.10.0/publish_flow_block.go:10
 		// github.com/wagslane/go-rabbitmq@v0.10.0/publish_flow_block.go:29
 
 		if err := c.rabbitmqPublisher.Close(); err != nil {
-			log.Error().Err(err).Send()
 			return err
 		}
 		c.stop = true
-		log.Print("Stopped Rabbit component")
+		c.log.Print("Stopped Rabbit component")
 	}
 	return nil
 }

@@ -2,12 +2,12 @@ package repository
 
 import (
 	"fmt"
-	"os"
 
 	"walk_backend/internal/app/model"
 
 	"github.com/gofrs/uuid"
 	rabbitmq "github.com/wagslane/go-rabbitmq"
+	"golang.org/x/net/context"
 )
 
 // NotifyReturnError ...
@@ -43,23 +43,26 @@ func (e *NotifyPublishError) Error() string {
 
 // PlaceQueueRabbitRepository place queue repository
 type PlaceQueueRabbitRepository struct {
-	publisher     *rabbitmq.Publisher
-	notifyReturn  <-chan rabbitmq.Return
-	notifyPublish <-chan rabbitmq.Confirmation
+	ctx               context.Context
+	publisher         *rabbitmq.Publisher
+	reindexExchange   string
+	reindexRoutingKey string
 }
 
 var _ PlaceQueueRepositoryInterface = (*PlaceQueueRabbitRepository)(nil)
 
 // NewPlaceQueueRabbitRepository create new queue rabbitmq repository
 func NewPlaceQueueRabbitRepository(
+	ctx context.Context,
 	publisher *rabbitmq.Publisher,
-	notifyReturn <-chan rabbitmq.Return,
-	notifyPublish <-chan rabbitmq.Confirmation,
+	reindexExchange string,
+	reindexRoutingKey string,
 ) *PlaceQueueRabbitRepository {
 	return &PlaceQueueRabbitRepository{
-		publisher:     publisher,
-		notifyReturn:  notifyReturn,
-		notifyPublish: notifyPublish,
+		ctx:               ctx,
+		publisher:         publisher,
+		reindexExchange:   reindexExchange,
+		reindexRoutingKey: reindexRoutingKey,
 	}
 }
 
@@ -73,8 +76,8 @@ func (r *PlaceQueueRabbitRepository) PublishReIndex(id model.ID) error {
 
 	if err := r.publisher.Publish(
 		[]byte(id.String()),
-		[]string{os.Getenv("RABBITMQ_ROUTING_PLACE_KEY")},
-		rabbitmq.WithPublishOptionsExchange(os.Getenv("RABBITMQ_EXCHANGE_REINDEX")),
+		[]string{r.reindexRoutingKey},
+		rabbitmq.WithPublishOptionsExchange(r.reindexExchange),
 		rabbitmq.WithPublishOptionsPersistentDelivery,
 		rabbitmq.WithPublishOptionsMandatory,
 		rabbitmq.WithPublishOptionsCorrelationID(correlationID.String()),
@@ -84,12 +87,14 @@ func (r *PlaceQueueRabbitRepository) PublishReIndex(id model.ID) error {
 
 	for {
 		select {
-		case ret := <-r.notifyReturn:
+		case <-r.ctx.Done():
+			return r.ctx.Err()
+		case ret := <-r.publisher.NotifyReturn():
 			if ret.CorrelationId == correlationID.String() {
 				return &NotifyReturnError{ReturnNotify: ret}
 			}
 			continue
-		case confirm := <-r.notifyPublish:
+		case confirm := <-r.publisher.NotifyPublish():
 			if !confirm.Ack {
 				return &NotifyPublishError{ConfirmNotify: confirm}
 			}

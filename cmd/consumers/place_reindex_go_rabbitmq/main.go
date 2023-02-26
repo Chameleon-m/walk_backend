@@ -53,7 +53,7 @@ func main() {
 	workersCount := env.GetMustInt("RABBITMQ_CONSUMERS_PLACE_REINDEX_COUNT")
 
 	mongoURI := env.GetMust("MONGO_URI")
-	mongoDB := env.GetMust("MONGO_INITDB_DATABASE")
+	mongoDB := env.GetMust("MONGO_INITDB_NAME")
 
 	rabbitmqURL := env.GetMust("RABBITMQ_URI")
 	consumerTag := env.GetMust("RABBITMQ_CONSUMERS_PLACE_REINDEX_TAG")
@@ -75,7 +75,7 @@ func main() {
 	if err = mongoClient.Ping(ctx, readpref.Primary()); err != nil {
 		logErr.Fatal().Err(err).Caller().Send()
 	}
-	log.Print("connected to MongoDB")
+	log.Print("Сonnected to MongoDB")
 
 	// Consumer configuration
 	consumer, err := rabbitmq.NewConsumer(
@@ -99,9 +99,6 @@ func main() {
 	}
 	defer publisher.Close()
 
-	notifyReturn := publisher.NotifyReturn()
-	notifyPublish := publisher.NotifyPublish()
-
 	log.Print("Connected to RabbitMQ")
 
 	// category
@@ -111,7 +108,7 @@ func main() {
 	// place
 	collectionPlaces := mongoClient.Database(mongoDB).Collection("places")
 	placeMongoRepository := repository.NewPlaceMongoRepository(ctx, collectionPlaces)
-	placeQueueRabbitRepository := repository.NewPlaceQueueRabbitRepository(publisher, notifyReturn, notifyPublish)
+	placeQueueRabbitRepository := repository.NewPlaceQueueRabbitRepository(ctx, publisher, exchange, routingKey)
 	placeService := service.NewDefaultPlaceService(placeMongoRepository, categoryMongoRepository, placeQueueRabbitRepository, nil, nil)
 
 	done := make(chan struct{}, 1)

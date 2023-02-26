@@ -2,8 +2,6 @@ package app
 
 import (
 	"context"
-	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"os/signal"
@@ -17,54 +15,58 @@ import (
 	"walk_backend/internal/app/service"
 	"walk_backend/internal/pkg/cache"
 	"walk_backend/internal/pkg/components"
-	"walk_backend/internal/pkg/env"
 	"walk_backend/internal/pkg/httpserver"
 
 	"github.com/gin-contrib/logger"
 	"github.com/gin-gonic/gin"
-
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/errgroup"
 )
 
 type App struct {
-	// handlers []*gin.HandlerFunc
 	handlers  handlers.HandlersInterface
 	engine    *gin.Engine
-	env       env.EnvInterface
+	cfg       *Config
 	ctx       context.Context
 	ctxCancel context.CancelFunc
+	logger    zerolog.Logger
 }
 
 var _ httpserver.ServerInterface = (*App)(nil)
 
-func New() *App {
-
-	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, NoColor: true})
-	log.Print("Started")
+func New(cfg *Config) *App {
 
 	app := &App{}
-	app.env = env.New()
+	app.cfg = cfg
 
 	gin.DisableConsoleColor()
-	gin.SetMode(app.env.GetMust(gin.EnvGinMode)) // GIN_MODE
+	gin.SetMode(app.cfg.GinMode)
 
-	zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	if app.env.GetMust(gin.EnvGinMode) == gin.DebugMode {
+	zerolog.TimeFieldFormat = time.RFC3339Nano
+	if app.cfg.Log.UTC {
+		zerolog.TimestampFunc = func() time.Time {
+			return time.Now().UTC()
+		}
+	}
+	app.logger = zerolog.New(os.Stdout).With().Timestamp().Logger()
+	app.logger.Printf("Started mod: %s", gin.Mode())
+	logLevel := zerolog.Level(app.cfg.Log.Level)
+	app.logger.Level(logLevel)
+	zerolog.SetGlobalLevel(logLevel)
+	if app.cfg.GinMode == gin.DebugMode {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
+	app.logger.Printf("Log level: %s", logLevel.String())
 
 	return app
 }
 
 func (app *App) Run() {
 
+	log := app.logger
 	log.Print("Run started")
 	defer log.Print("Server exiting")
-
-	var err error
 
 	// Create context that listens for the interrupt signal from the OS.
 	ctxSignal, ctxSignalStop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -81,10 +83,12 @@ func (app *App) Run() {
 
 	// Redis
 	redisComponent := components.NewRedis(
-		app.env.GetMust("REDIS_HOST"),
-		app.env.GetMust("REDIS_PORT"),
-		app.env.GetMust("REDIS_USERNAME"),
-		app.env.GetMust("REDIS_PASSWORD"),
+		"redis",
+		app.logger,
+		app.cfg.Redis.Host,
+		app.cfg.Redis.Port,
+		app.cfg.Redis.Username,
+		app.cfg.Redis.Password,
 	)
 	g.Go(func() error { return redisComponent.Start(gCtx) })
 	defer func() {
@@ -94,7 +98,7 @@ func (app *App) Run() {
 	}()
 
 	// RabbitMQ
-	rabbitMqPublisherComponent := components.NewRabbitMQ(app.env.GetMust("RABBITMQ_URI"))
+	rabbitMqPublisherComponent := components.NewRabbitMQ("rabbitMQ", app.logger, app.cfg.RabbitMQ.URI)
 	g.Go(func() error { return rabbitMqPublisherComponent.Start(gCtx) })
 	defer func() {
 		if err := rabbitMqPublisherComponent.Stop(context.TODO()); err != nil {
@@ -103,8 +107,8 @@ func (app *App) Run() {
 	}()
 
 	// DB mongo
-	mongoDefaultDB := app.env.GetMust("MONGO_INITDB_DATABASE")
-	mongoDBComponent := components.NewMongoDB(app.env.GetMust("MONGO_URI"))
+	mongoDefaultDB := app.cfg.MongoDB.InitDBName
+	mongoDBComponent := components.NewMongoDB("mongoDB", app.logger, app.cfg.MongoDB.URI)
 	g.Go(func() error { return mongoDBComponent.Start(gCtx) })
 	defer func() {
 		if err := mongoDBComponent.Stop(context.TODO()); err != nil {
@@ -114,12 +118,15 @@ func (app *App) Run() {
 
 	<-mongoDBComponent.Ready()
 	// Session // MongoDB store
+	sessionName := app.cfg.Session.Name
 	sessionComponent := components.NewSessionGinMongoDB(
-		app.env.GetMust("SESSION_SECRET"),
-		app.env.GetMust("SESSION_PATH"),
-		app.env.GetMust("SESSION_DOMAIN"),
-		app.env.GetMustInt("SESSION_MAX_AGE"),
-		app.env.GetMust("SESSION_MONGO_DATABASE"),
+		"session",
+		app.logger,
+		app.cfg.Session.Secret,
+		app.cfg.Session.Path,
+		app.cfg.Session.Domain,
+		app.cfg.Session.MaxAge,
+		app.cfg.Session.DBName,
 		mongoDBComponent.GetClient(),
 	)
 	g.Go(func() error { return sessionComponent.Start(gCtx) })
@@ -151,9 +158,10 @@ func (app *App) Run() {
 	placeMongoRepository := repository.NewPlaceMongoRepository(app.ctx, collectionPlaces)
 	placeCacheRedisRepository := repository.NewPlaceCacheRedisRepository(app.ctx, redisClient)
 	placeQueueRabbitRepository := repository.NewPlaceQueueRabbitRepository(
+		app.ctx,
 		rabbitMQClient,
-		rabbitMQClient.NotifyReturn(),
-		rabbitMQClient.NotifyPublish(),
+		app.cfg.Queue.ReIndex.Exchange,
+		app.cfg.Queue.ReIndex.Place.RoutingKey,
 	)
 	keyBuilder := cache.NewKeyBuilderDefault()
 	placeService := service.NewDefaultPlaceService(
@@ -170,38 +178,18 @@ func (app *App) Run() {
 	app.engine = gin.New()
 	app.engine.Use(gin.Recovery())
 
-	// common midelleware
+	// common middleware
 
-	// zerolog midelleware
-	fileLog, err := os.Create("debug.log")
-	if err != nil {
-		log.Fatal().Err(err).Caller(0).Send()
-	}
-
-	defaultLevel, err := zerolog.ParseLevel(app.env.GetMust("LOG_DEFAULT_LEVEL"))
-	if err != nil {
-		log.Fatal().Err(err).Caller(0).Send()
-	}
-	clientLevel, err := zerolog.ParseLevel(app.env.GetMust("LOG_CLIENT_LEVEL"))
-	if err != nil {
-		log.Fatal().Err(err).Caller(0).Send()
-	}
-	serverLevel, err := zerolog.ParseLevel(app.env.GetMust("LOG_SERVER_LEVEL"))
-	if err != nil {
-		log.Fatal().Err(err).Caller(0).Send()
-	}
-
+	// zerolog middleware
 	app.engine.Use(logger.SetLogger(
 		logger.WithSkipPath([]string{"/version", "/prometheus"}),
 		logger.WithUTC(true),
-		logger.WithWriter(io.MultiWriter(fileLog)),
-		logger.WithDefaultLevel(defaultLevel),
-		logger.WithClientErrorLevel(clientLevel),
-		logger.WithServerErrorLevel(serverLevel),
+		logger.WithWriter(os.Stdout),
+		logger.WithDefaultLevel(zerolog.InfoLevel),
+		logger.WithClientErrorLevel(zerolog.WarnLevel),
+		logger.WithServerErrorLevel(zerolog.ErrorLevel),
 		logger.WithLogger(func(c *gin.Context, l zerolog.Logger) zerolog.Logger {
-			return l.With().
-				Str("id", c.GetHeader("X-Request-ID")).
-				Logger()
+			return app.logger.With().Str("id", c.GetHeader("X-Request-ID")).Logger()
 		}),
 	))
 
@@ -209,19 +197,15 @@ func (app *App) Run() {
 	app.engine.Use(middleware.Prometheus())
 
 	// CORS middleware
-	siteSchema := os.Getenv("SITE_SCHEMA")
-	siteHost := os.Getenv("SITE_HOST")
-	sitePort := os.Getenv("SITE_PORT")
-	app.engine.Use(middleware.Cors(siteSchema, siteHost, sitePort))
+	app.engine.Use(middleware.Cors(app.cfg.Site.Schema, app.cfg.Site.Host, app.cfg.Site.Port))
 
 	// RequestAbsURL middleware
 	app.engine.Use(middleware.RequestAbsURL())
 
-	// session midelleware
-	sessionName := app.env.GetMust("SESSION_NAME")
+	// session middleware
 	sessionMidlleware := middleware.Session(sessionName, sessionComponent.GetClient())
 
-	// auth midelleware
+	// auth middleware
 	authMiddleware := middleware.Auth()
 
 	// routes for version 1
@@ -238,7 +222,7 @@ func (app *App) Run() {
 	app.handlers.GetCategoriesHandler().MakeHandlers(apiV1, apiV1auth)
 
 	app.engine.GET("/version", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"version": os.Getenv("API_VERSION")})
+		c.JSON(http.StatusOK, gin.H{"version": app.cfg.Version})
 	})
 	app.engine.GET("/prometheus", gin.WrapH(promhttp.Handler()))
 
@@ -255,9 +239,8 @@ func (app *App) Run() {
 	}()
 
 	// build server
-	addr := fmt.Sprintf(":%s", app.env.GetMust("API_PORT"))
 	server := &http.Server{
-		Addr:    addr,
+		Addr:    ":" + app.cfg.Api.Port, //net.JoinHostPort(app.cfg.Api.Host, app.cfg.Api.Port),
 		Handler: app.engine,
 		// TODO
 	}

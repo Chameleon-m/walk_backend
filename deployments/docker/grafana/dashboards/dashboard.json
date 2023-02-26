@@ -623,7 +623,7 @@
             "uid": "4_ybTPh4z"
           },
           "editorMode": "builder",
-          "expr": "docker_container_cpu_usage_percent{API_VERSION=\"0.0.1\"}",
+          "expr": "docker_container_cpu_usage_percent{APP_VERSION=\"0.0.1\"}",
           "legendFormat": "{{container_name}}",
           "range": true,
           "refId": "A"
@@ -723,9 +723,9 @@
             "uid": "4_ybTPh4z"
           },
           "editorMode": "builder",
-          "expr": "docker_container_mem_usage{API_VERSION=\"0.0.1\"}",
+          "expr": "docker_container_mem_usage{APP_VERSION=\"0.0.1\"}",
           "hide": false,
-          "legendFormat": "{{container_name}} - {{API_VERSION}}",
+          "legendFormat": "{{container_name}} - {{APP_VERSION}}",
           "range": true,
           "refId": "A"
         }

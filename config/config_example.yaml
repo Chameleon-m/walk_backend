@@ -1,0 +1,45 @@
+app:
+  version: '0.0.1'
+  gin_mod: 'debug'
+
+  log:
+    # trace -1 # debug 0 # info 1 # warn 2 # error 3 # fatal 4 # panic 5 # "" = 6 # disabled = 7
+    level: 0
+    utc: true
+
+  api:
+    schema: 'http'
+    host: 'api'
+    port: '8080'
+
+  site:
+    schema: 'https'
+    host: 'localhost'
+    port: '80'
+
+  queue:
+    reindex:
+      place:
+        routing_key: place_routing_key
+        queue: place_reindex_queue
+
+  redis_component:
+    host: 'redis'
+    port: '6379'
+    username: 'username'
+    password: 'password'
+
+  rabbit_mq_component:
+    uri: 'amqp://guest:guest@localhost:5672/'
+
+  mongo_db_component:
+    init_db_name: 'walk'
+    uri: 'mongodb://user:userpassword@localhost:27017/walk?authSource=walk&replicaSet=rs0&serverSelectionTimeoutMS=2000'
+
+  session_component:
+    name: 'session_name'
+    secret: '59ce2f5dc5a3f211c6f9fffb19d7cc18c098ac19645df22585c20d19477f14ae'
+    path: '/api/v1/auth'
+    domain: '.localhost'
+    max_age: 3600
+    db_name: 'walk'

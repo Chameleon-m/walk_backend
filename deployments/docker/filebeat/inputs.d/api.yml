@@ -3,7 +3,7 @@
   id: app-api-debug-log-filestream
   paths:
     - /var/log/api/debug.log
-  tags: ['${API_VERSION}']
+  tags: ['${APP_VERSION}']
   # fields:
   #   app: api
   # include_lines: ['^ERR', '^WARN']

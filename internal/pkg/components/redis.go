@@ -2,12 +2,42 @@ package components
 
 import (
 	"context"
+	"flag"
+	"fmt"
 	"net"
 	"sync"
 
 	"github.com/go-redis/redis/v9"
-	"github.com/rs/zerolog/log"
+	"github.com/rs/zerolog"
 )
+
+type RedisConfig struct {
+	Host     string `yaml:"host"     env:"REDIS_HOST"     env-description:"Redis host"`
+	Port     string `yaml:"port"     env:"REDIS_PORT"     env-description:"Redis port"`
+	Username string `yaml:"username" env:"REDIS_USERNAME" env-description:"Redis username"`
+	Password string `yaml:"password" env:"REDIS_PASSWORD" env-description:"Redis password"`
+}
+
+func (cfg *RedisConfig) RegisterFlags(fs *flag.FlagSet) {
+	fs.StringVar(&cfg.Host, "redis-host", cfg.Host, "Redis host")
+	fs.StringVar(&cfg.Port, "redis-port", cfg.Port, "Redis port")
+	fs.StringVar(&cfg.Username, "redis-username", cfg.Username, "Redis username")
+	fs.StringVar(&cfg.Password, "redis-password", cfg.Password, "Redis password")
+}
+
+func (cfg *RedisConfig) Validate() error {
+	// TODO
+	if cfg.Host == "" {
+		return fmt.Errorf("invalid host")
+	} else if cfg.Port == "" {
+		return fmt.Errorf("invalid port")
+	} else if cfg.Username == "" {
+		return fmt.Errorf("invalid username")
+	} else if cfg.Password == "" {
+		return fmt.Errorf("invalid password")
+	}
+	return nil
+}
 
 var _ ComponentInterface = (*redisComponent)(nil)
 
@@ -20,9 +50,10 @@ type redisComponent struct {
 	m           sync.Mutex
 	stop        bool
 	ready       chan struct{}
+	log         zerolog.Logger
 }
 
-func NewRedis(host, port, username, password string) *redisComponent {
+func NewRedis(name string, log zerolog.Logger, host, port, username, password string) *redisComponent {
 	return &redisComponent{
 		host:     host,
 		port:     port,
@@ -30,6 +61,7 @@ func NewRedis(host, port, username, password string) *redisComponent {
 		password: password,
 		stop:     false,
 		ready:    make(chan struct{}, 1),
+		log:      log.With().Str("component", name).Logger(),
 	}
 }
 
@@ -48,7 +80,7 @@ func (c *redisComponent) Start(ctx context.Context) error {
 	c.m.Lock()
 	defer c.m.Unlock()
 
-	log.Print("Start connected to Redis")
+	c.log.Print("Start connected to Redis")
 
 	c.redisClient = redis.NewClient(&redis.Options{
 		Addr:     net.JoinHostPort(c.host, c.port),
@@ -57,20 +89,20 @@ func (c *redisComponent) Start(ctx context.Context) error {
 		DB:       0, // use default DB
 	})
 
-	log.Print("Connected to Redis")
+	c.log.Print("Connected to Redis")
 
-	log.Print("Redis status: PING")
+	c.log.Print("Redis status: PING")
 	status, err := c.redisClient.Ping(ctx).Result()
 	if err != nil {
 		return err
 	}
-	log.Print("Redis status: " + status)
+	c.log.Print("Redis status: " + status)
 
 	c.stop = false
 
 	c.ready <- struct{}{}
 	close(c.ready)
-	log.Print("Redis READY")
+	c.log.Print("Redis READY")
 
 	return nil
 }
@@ -79,13 +111,12 @@ func (c *redisComponent) Stop(ctx context.Context) error {
 	c.m.Lock()
 	defer c.m.Unlock()
 	if !c.stop {
-		log.Print("Stop Redis component")
+		c.log.Print("Stop Redis component")
 		if err := c.redisClient.Close(); err != nil {
-			log.Error().Err(err).Send()
 			return err
 		}
 		c.stop = true
-		log.Print("Stopped Redis component")
+		c.log.Print("Stopped Redis component")
 	}
 	return nil
 }
