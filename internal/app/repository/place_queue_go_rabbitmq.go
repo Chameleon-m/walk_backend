@@ -49,8 +49,6 @@ type PlaceQueueRabbitRepository struct {
 	reindexRoutingKey string
 }
 
-var _ PlaceQueueRepositoryInterface = (*PlaceQueueRabbitRepository)(nil)
-
 // NewPlaceQueueRabbitRepository create new queue rabbitmq repository
 func NewPlaceQueueRabbitRepository(
 	ctx context.Context,

@@ -1,4 +1,4 @@
-package handlers
+package auth
 
 import (
 	"errors"
@@ -6,6 +6,7 @@ import (
 
 	"walk_backend/internal/app/api/presenter"
 	"walk_backend/internal/app/dto"
+	"walk_backend/internal/app/model"
 	"walk_backend/internal/app/service"
 
 	"github.com/gin-contrib/sessions"
@@ -13,26 +14,34 @@ import (
 	"golang.org/x/net/context"
 )
 
-type AuthHandlerInterface interface {
-	HandlerInterface
-	SignUpHandler(c *gin.Context)
-	SignInHandler(c *gin.Context)
-	RefreshHandler(c *gin.Context)
-	SignOutHandler(c *gin.Context)
+// ServiceInterface ...
+type ServiceInterface interface {
+	Registration(dto *dto.AuthLogin) (*model.User, error)
+	Login(dto *dto.AuthLogin) (*model.User, error)
+	GenerateToken() (string, error)
+}
+
+// TokenPresenterInterface ...
+type TokenPresenterInterface interface {
+	Make(token string) *presenter.Token
 }
 
 // AuthHandler auth handler
 type AuthHandler struct {
-	service   service.AuthServiceInteface
 	ctx       context.Context
-	presenter presenter.TokenPresenterInteface
+	service   ServiceInterface
+	presenter TokenPresenterInterface
 }
 
-// NewAuthHandler create new auth handler
-func NewAuthHandler(ctx context.Context, service service.AuthServiceInteface, presenter presenter.TokenPresenterInteface) *AuthHandler {
+// NewHandler create new auth handler
+func NewHandler(
+	ctx context.Context,
+	service ServiceInterface,
+	presenter TokenPresenterInterface,
+) *AuthHandler {
 	return &AuthHandler{
-		service:   service,
 		ctx:       ctx,
+		service:   service,
 		presenter: presenter,
 	}
 }

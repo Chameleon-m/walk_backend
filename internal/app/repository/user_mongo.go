@@ -17,8 +17,6 @@ type UserMongoRepository struct {
 	ctx        context.Context
 }
 
-var _ UserRepositoryInterface = (*UserMongoRepository)(nil)
-
 // NewUserMongoRepository create new user mongo repository
 func NewUserMongoRepository(ctx context.Context, collection *mongo.Collection) *UserMongoRepository {
 	return &UserMongoRepository{

@@ -5,7 +5,6 @@ import (
 
 	"walk_backend/internal/app/dto"
 	"walk_backend/internal/app/model"
-	"walk_backend/internal/app/repository"
 
 	"github.com/gofrs/uuid"
 )
@@ -15,15 +14,19 @@ var (
 	ErrInvalidUsernameOrPassword = errors.New("invalid username or password")
 )
 
-// DefaultAuthService ...
-type DefaultAuthService struct {
-	userRepo repository.UserRepositoryInterface
+// UserRepositoryInterface ...
+type UserRepositoryInterface interface {
+	Create(m *model.User) (model.ID, error)
+	FindByUsername(username string) (*model.User, error)
 }
 
-var _ AuthServiceInteface = (*DefaultAuthService)(nil)
+// DefaultAuthService ...
+type DefaultAuthService struct {
+	userRepo UserRepositoryInterface
+}
 
 // NewDefaultAuthService create new default auth service
-func NewDefaultAuthService(userRepo repository.UserRepositoryInterface) *DefaultAuthService {
+func NewDefaultAuthService(userRepo UserRepositoryInterface) *DefaultAuthService {
 	return &DefaultAuthService{
 		userRepo: userRepo,
 	}

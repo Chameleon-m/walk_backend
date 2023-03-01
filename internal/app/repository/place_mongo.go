@@ -18,8 +18,6 @@ type PlaceMongoRepository struct {
 	ctx        context.Context
 }
 
-var _ PlaceRepositoryInterface = (*PlaceMongoRepository)(nil)
-
 // NewPlaceMongoRepository create new mongo place repository
 func NewPlaceMongoRepository(ctx context.Context, collection *mongo.Collection) *PlaceMongoRepository {
 	return &PlaceMongoRepository{

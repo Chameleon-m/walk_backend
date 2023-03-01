@@ -3,18 +3,24 @@ package service
 import (
 	"walk_backend/internal/app/dto"
 	"walk_backend/internal/app/model"
-	"walk_backend/internal/app/repository"
 )
+
+// CategoryRepositoryInterface ...
+type CategoryRepositoryInterface interface {
+	Find(id model.ID) (*model.Category, error)
+	FindAll() (model.CategoryList, error)
+	Create(m *model.Category) (model.ID, error)
+	Update(m *model.Category) error
+	Delete(id model.ID) error
+}
 
 // DefaultCategoryService ...
 type DefaultCategoryService struct {
-	categoryRepo repository.CategoryRepositoryInterface
+	categoryRepo CategoryRepositoryInterface
 }
 
-var _ CategoryServiceInteface = (*DefaultCategoryService)(nil)
-
 // NewDefaultCategoryService create new default category service
-func NewDefaultCategoryService(categoryRepo repository.CategoryRepositoryInterface) *DefaultCategoryService {
+func NewDefaultCategoryService(categoryRepo CategoryRepositoryInterface) *DefaultCategoryService {
 	return &DefaultCategoryService{
 		categoryRepo: categoryRepo,
 	}

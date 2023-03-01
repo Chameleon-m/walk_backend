@@ -12,8 +12,6 @@ type PlaceInMemoryRepository struct {
 	Places model.PlaceList
 }
 
-var _ PlaceRepositoryInterface = (*PlaceInMemoryRepository)(nil)
-
 // NewPlaceInMemoryRepository create new place memory repository
 func NewPlaceInMemoryRepository() *PlaceInMemoryRepository {
 	var places = model.PlaceList{}

@@ -9,13 +9,15 @@ import (
 	"time"
 
 	"walk_backend/internal/app/api/handlers"
+	"walk_backend/internal/app/api/handlers/auth"
+	"walk_backend/internal/app/api/handlers/category"
+	"walk_backend/internal/app/api/handlers/place"
 	"walk_backend/internal/app/api/middleware"
 	"walk_backend/internal/app/api/presenter"
 	"walk_backend/internal/app/repository"
 	"walk_backend/internal/app/service"
 	"walk_backend/internal/pkg/cache"
 	"walk_backend/internal/pkg/components"
-	"walk_backend/internal/pkg/httpserver"
 
 	"github.com/gin-contrib/logger"
 	"github.com/gin-gonic/gin"
@@ -32,8 +34,6 @@ type App struct {
 	ctxCancel context.CancelFunc
 	logger    zerolog.Logger
 }
-
-var _ httpserver.ServerInterface = (*App)(nil)
 
 func New(cfg *Config) *App {
 
@@ -74,8 +74,6 @@ func (app *App) Run() {
 
 	app.ctx, app.ctxCancel = context.WithCancel(context.Background())
 	defer app.ctxCancel()
-
-	app.handlers = handlers.New(app)
 
 	g, gCtx := errgroup.WithContext(app.ctx)
 
@@ -139,41 +137,6 @@ func (app *App) Run() {
 	rabbitMQClient := rabbitMqPublisherComponent.GetClient()
 	redisClient := redisComponent.GetClient()
 
-	// auth
-	collectionUsers := mongoClient.Database(mongoDefaultDB).Collection("users")
-	userMongoRepository := repository.NewUserMongoRepository(app.ctx, collectionUsers)
-	authService := service.NewDefaultAuthService(userMongoRepository)
-	tokenPresenter := presenter.NewTokenPresenter()
-	app.handlers.SetAuthHandler(handlers.NewAuthHandler(app.ctx, authService, tokenPresenter))
-
-	// category
-	collectionCategories := mongoClient.Database(mongoDefaultDB).Collection("categories")
-	categoryMongoRepository := repository.NewCategoryMongoRepository(app.ctx, collectionCategories)
-	categoryService := service.NewDefaultCategoryService(categoryMongoRepository)
-	categoryPresenter := presenter.NewCategoryPresenter()
-	app.handlers.SetCategoriesHandler(handlers.NewCategoriesHandler(app.ctx, categoryService, categoryPresenter))
-
-	// place
-	collectionPlaces := mongoClient.Database(mongoDefaultDB).Collection("places")
-	placeMongoRepository := repository.NewPlaceMongoRepository(app.ctx, collectionPlaces)
-	placeCacheRedisRepository := repository.NewPlaceCacheRedisRepository(app.ctx, redisClient)
-	placeQueueRabbitRepository := repository.NewPlaceQueueRabbitRepository(
-		app.ctx,
-		rabbitMQClient,
-		app.cfg.Queue.ReIndex.Exchange,
-		app.cfg.Queue.ReIndex.Place.RoutingKey,
-	)
-	keyBuilder := cache.NewKeyBuilderDefault()
-	placeService := service.NewDefaultPlaceService(
-		placeMongoRepository,
-		categoryMongoRepository,
-		placeQueueRabbitRepository,
-		placeCacheRedisRepository,
-		keyBuilder,
-	)
-	placePresenter := presenter.NewPlacePresenter()
-	app.handlers.SetPlacesHandler(handlers.NewPlacesHandler(app.ctx, placeService, placePresenter))
-
 	// Engine
 	app.engine = gin.New()
 	app.engine.Use(gin.Recovery())
@@ -215,11 +178,44 @@ func (app *App) Run() {
 	apiV1auth.Use(sessionMidlleware)
 	apiV1auth.Use(authMiddleware)
 
-	// app.handlers.make() // make interface
-	app.handlers.GetAuthHandler().MakeHandlers(apiV1)
-	app.handlers.GetPlacesHandler().MakeHandlers(apiV1, apiV1auth)
-	app.handlers.GetPlacesHandler().MakeRequestValidation()
-	app.handlers.GetCategoriesHandler().MakeHandlers(apiV1, apiV1auth)
+	app.handlers = handlers.New(app, apiV1, apiV1auth)
+
+	// auth
+	collectionUsers := mongoClient.Database(mongoDefaultDB).Collection("users")
+	userMongoRepository := repository.NewUserMongoRepository(app.ctx, collectionUsers)
+	authService := service.NewDefaultAuthService(userMongoRepository)
+	tokenPresenter := presenter.NewTokenPresenter()
+	app.handlers.SetAuthHandler(auth.NewHandler(app.ctx, authService, tokenPresenter))
+
+	// category
+	collectionCategories := mongoClient.Database(mongoDefaultDB).Collection("categories")
+	categoryMongoRepository := repository.NewCategoryMongoRepository(app.ctx, collectionCategories)
+	categoryService := service.NewDefaultCategoryService(categoryMongoRepository)
+	categoryPresenter := presenter.NewCategoryPresenter()
+	app.handlers.SetCategoriesHandler(category.NewHandler(app.ctx, categoryService, categoryPresenter))
+
+	// place
+	collectionPlaces := mongoClient.Database(mongoDefaultDB).Collection("places")
+	placeMongoRepository := repository.NewPlaceMongoRepository(app.ctx, collectionPlaces)
+	placeCacheRedisRepository := repository.NewPlaceCacheRedisRepository(app.ctx, redisClient)
+	placeQueueRabbitRepository := repository.NewPlaceQueueRabbitRepository(
+		app.ctx,
+		rabbitMQClient,
+		app.cfg.Queue.ReIndex.Exchange,
+		app.cfg.Queue.ReIndex.Place.RoutingKey,
+	)
+	keyBuilder := cache.NewKeyBuilderDefault()
+	placeService := service.NewDefaultPlaceService(
+		placeMongoRepository,
+		categoryMongoRepository,
+		placeQueueRabbitRepository,
+		placeCacheRedisRepository,
+		keyBuilder,
+	)
+	placePresenter := presenter.NewPlacePresenter()
+	app.handlers.SetPlacesHandler(place.NewHandler(app.ctx, placeService, placePresenter))
+
+	app.handlers.Make()
 
 	app.engine.GET("/version", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"version": app.cfg.Version})
@@ -279,6 +275,7 @@ func (app *App) IsDebug() bool {
 	return gin.IsDebugging()
 }
 
+// GetContext return app context
 func (app *App) GetContext() context.Context {
 	return app.ctx
 }

@@ -6,6 +6,34 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type CategoriesHandlerInterface interface {
+	HandlerWithAuthInterface
+	ListCategoriesHandler(c *gin.Context)
+	NewCategoryHandler(c *gin.Context)
+	UpdateCategryHandler(c *gin.Context)
+	DeleteCategoryHandler(c *gin.Context)
+	GetOneCategoryHandler(c *gin.Context)
+}
+
+type AuthHandlerInterface interface {
+	HandlerInterface
+	SignUpHandler(c *gin.Context)
+	SignInHandler(c *gin.Context)
+	RefreshHandler(c *gin.Context)
+	SignOutHandler(c *gin.Context)
+}
+
+type PlacesHandlerInterface interface {
+	HandlerWithAuthInterface
+	HandlerRequestValidationInterface
+	ListPlacesHandler(c *gin.Context)
+	NewPlaceHandler(c *gin.Context)
+	UpdatePlaceHandler(c *gin.Context)
+	DeletePlaceHandler(c *gin.Context)
+	GetOnePlaceHandler(c *gin.Context)
+	SearchPlacesHandler(c *gin.Context)
+}
+
 // HandlerInterface ...
 type HandlerInterface interface {
 	MakeHandlers(router *gin.RouterGroup)
@@ -23,6 +51,7 @@ type HandlerRequestValidationInterface interface {
 
 // HandlersInterface ...
 type HandlersInterface interface {
+	Make()
 	GetAuthHandler() AuthHandlerInterface
 	SetAuthHandler(handler AuthHandlerInterface)
 	GetCategoriesHandler() CategoriesHandlerInterface
@@ -33,15 +62,19 @@ type HandlersInterface interface {
 
 type handlers struct {
 	app               httpserver.ServerInterface
+	router            *gin.RouterGroup
+	routerAuth        *gin.RouterGroup
 	authHandler       AuthHandlerInterface
 	placesHandler     PlacesHandlerInterface
 	categoriesHandler CategoriesHandlerInterface
 }
 
 // New ...
-func New(app httpserver.ServerInterface) *handlers {
+func New(app httpserver.ServerInterface, router *gin.RouterGroup, routerAuth *gin.RouterGroup) *handlers {
 	return &handlers{
-		app: app,
+		app:        app,
+		router:     router,
+		routerAuth: routerAuth,
 	}
 }
 
@@ -75,9 +108,9 @@ func (h *handlers) SetPlacesHandler(handler PlacesHandlerInterface) {
 	h.placesHandler = handler
 }
 
-// func (h *handlers) Make() {
-// 	h.GetAuthHandler().MakeHandlers(apiV1)
-// 	h.GetPlacesHandler().MakeHandlers(apiV1, apiV1auth)
-// 	h.GetPlacesHandler().MakeRequestValidation()
-// 	h.GetCategoriesHandler().MakeHandlers(apiV1, apiV1auth)
-// }
+func (h *handlers) Make() {
+	h.GetAuthHandler().MakeHandlers(h.router)
+	h.GetPlacesHandler().MakeHandlers(h.router, h.routerAuth)
+	h.GetPlacesHandler().MakeRequestValidation()
+	h.GetCategoriesHandler().MakeHandlers(h.router, h.routerAuth)
+}

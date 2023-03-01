@@ -1,4 +1,4 @@
-package handlers
+package place
 
 import (
 	"errors"
@@ -7,7 +7,7 @@ import (
 	"walk_backend/internal/app/api/presenter"
 	"walk_backend/internal/app/dto"
 	"walk_backend/internal/app/model"
-	"walk_backend/internal/app/service"
+	"walk_backend/internal/pkg/util"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -15,26 +15,33 @@ import (
 	"golang.org/x/net/context"
 )
 
-type PlacesHandlerInterface interface {
-	HandlerWithAuthInterface
-	HandlerRequestValidationInterface
-	ListPlacesHandler(c *gin.Context)
-	NewPlaceHandler(c *gin.Context)
-	UpdatePlaceHandler(c *gin.Context)
-	DeletePlaceHandler(c *gin.Context)
-	GetOnePlaceHandler(c *gin.Context)
-	SearchPlacesHandler(c *gin.Context)
+// ServiceInterface ...
+type ServiceInterface interface {
+	ListPlaces() (model.PlaceList, error)
+	Create(dto *dto.Place) (model.ID, error)
+	Update(dto *dto.Place) error
+	Delete(id model.ID) error
+	Find(id model.ID) (*model.Place, error)
+	Search(search string) (model.PlaceList, error)
+	ListCategories() (model.CategoryList, error)
+	FindCategory(id model.ID) (*model.Category, error)
+}
+
+// PresenterInterface ...
+type PresenterInterface interface {
+	Make(m *model.Place, c *model.Category) *presenter.Place
+	MakeList(mList model.PlaceList, cList model.CategoryList) []*presenter.Place
 }
 
 // PlacesHandler ...
 type PlacesHandler struct {
-	service   service.PlaceServiceInteface
 	ctx       context.Context
-	presenter presenter.PlacePresenterInteface
+	service   ServiceInterface
+	presenter PresenterInterface
 }
 
-// NewPlacesHandler ...
-func NewPlacesHandler(ctx context.Context, service service.PlaceServiceInteface, presenter presenter.PlacePresenterInteface) *PlacesHandler {
+// NewHandler ...
+func NewHandler(ctx context.Context, service ServiceInterface, presenter PresenterInterface) *PlacesHandler {
 	return &PlacesHandler{
 		service:   service,
 		ctx:       ctx,
@@ -105,7 +112,7 @@ func (handler *PlacesHandler) NewPlaceHandler(c *gin.Context) {
 		return
 	}
 
-	c.Header("Location", makeURL(c.Request, "/api/v1/places/"+id.String()))
+	c.Header("Location", util.MakeURL(c.Request, "/api/v1/places/"+id.String()))
 	c.JSON(http.StatusCreated, gin.H{"id": id})
 }
 

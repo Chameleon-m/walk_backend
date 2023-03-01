@@ -5,7 +5,6 @@ import (
 
 	"walk_backend/internal/app/dto"
 	"walk_backend/internal/app/model"
-	"walk_backend/internal/app/repository"
 	"walk_backend/internal/pkg/cache"
 
 	"github.com/gosimple/slug"
@@ -18,23 +17,49 @@ const (
 	searchListPlacesCacheDuration time.Duration = 5 * time.Minute
 )
 
+// PlaceRepositoryInterface ...
+type PlaceRepositoryInterface interface {
+	Find(id model.ID) (*model.Place, error)
+	FindAll() (model.PlaceList, error)
+	Create(m *model.Place) (model.ID, error)
+	Update(m *model.Place) error
+	Delete(id model.ID) error
+	Search(search string) (model.PlaceList, error)
+}
+
+// PlaceCategoryRepositoryInterface ...
+type PlaceCategoryRepositoryInterface interface {
+	Find(id model.ID) (*model.Category, error)
+	FindAll() (model.CategoryList, error)
+}
+
+// PlaceQueueRepositoryInterface ...
+type PlaceQueueRepositoryInterface interface {
+	PublishReIndex(id model.ID) error
+}
+
+// PlaceCacheRepositoryInterface ...
+type PlaceCacheRepositoryInterface interface {
+	Get(key string) (model.PlaceList, error)
+	Set(key string, value model.PlaceList, expiration time.Duration) error
+	Del(keys ...string) error
+}
+
 // DefaultPlaceService ...
 type DefaultPlaceService struct {
-	placeRepo    repository.PlaceRepositoryInterface
-	categoryRepo repository.CategoryRepositoryInterface
-	placeQueue   repository.PlaceQueueRepositoryInterface
-	placeCache   repository.PlaceCacheRepositoryInterface
+	placeRepo    PlaceRepositoryInterface
+	categoryRepo PlaceCategoryRepositoryInterface
+	placeQueue   PlaceQueueRepositoryInterface
+	placeCache   PlaceCacheRepositoryInterface
 	keyBuilder   cache.KeyBuilderInterface
 }
 
-var _ PlaceServiceInteface = (*DefaultPlaceService)(nil)
-
 // NewDefaultPlaceService create new default place service
 func NewDefaultPlaceService(
-	placeRepo repository.PlaceRepositoryInterface,
-	categoryRepo repository.CategoryRepositoryInterface,
-	placeQueue repository.PlaceQueueRepositoryInterface,
-	placeCache repository.PlaceCacheRepositoryInterface,
+	placeRepo PlaceRepositoryInterface,
+	categoryRepo PlaceCategoryRepositoryInterface,
+	placeQueue PlaceQueueRepositoryInterface,
+	placeCache PlaceCacheRepositoryInterface,
 	keyBuilder cache.KeyBuilderInterface,
 ) *DefaultPlaceService {
 	return &DefaultPlaceService{

@@ -1,11 +1,10 @@
-package handlers
+package util
 
 import (
 	"net/http"
 )
 
-// makeURL
-func makeURL(request *http.Request, uri string) string {
+func MakeURL(request *http.Request, uri string) string {
 
 	url := request.URL.Scheme + "://"
 	if request.URL.User.String() != "" {

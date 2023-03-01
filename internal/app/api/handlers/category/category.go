@@ -1,4 +1,4 @@
-package handlers
+package category
 
 import (
 	"errors"
@@ -7,30 +7,39 @@ import (
 	"walk_backend/internal/app/api/presenter"
 	"walk_backend/internal/app/dto"
 	"walk_backend/internal/app/model"
-	"walk_backend/internal/app/service"
+	"walk_backend/internal/pkg/util"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/net/context"
 )
 
-type CategoriesHandlerInterface interface {
-	HandlerWithAuthInterface
-	ListCategoriesHandler(c *gin.Context)
-	NewCategoryHandler(c *gin.Context)
-	UpdateCategryHandler(c *gin.Context)
-	DeleteCategoryHandler(c *gin.Context)
-	GetOneCategoryHandler(c *gin.Context)
+// ServiceInterface ...
+type ServiceInterface interface {
+	ListCategories() (model.CategoryList, error)
+	Create(dto *dto.Category) (model.ID, error)
+	Update(dto *dto.Category) error
+	Delete(id model.ID) error
+	Find(id model.ID) (*model.Category, error)
+}
+
+type PresenterInterface interface {
+	Make(m *model.Category) *presenter.Category
+	MakeList(mList model.CategoryList) []*presenter.Category
 }
 
 // CategoriesHandler categories handler struct
 type CategoriesHandler struct {
-	service   service.CategoryServiceInteface
 	ctx       context.Context
-	presenter presenter.CategoryPresenterInteface
+	service   ServiceInterface
+	presenter PresenterInterface
 }
 
-// NewCategoriesHandler create new categories handler
-func NewCategoriesHandler(ctx context.Context, service service.CategoryServiceInteface, presenter presenter.CategoryPresenterInteface) *CategoriesHandler {
+// NewHandler create new categories handler
+func NewHandler(
+	ctx context.Context,
+	service ServiceInterface,
+	presenter PresenterInterface,
+) *CategoriesHandler {
 	return &CategoriesHandler{
 		service:   service,
 		ctx:       ctx,
@@ -91,7 +100,7 @@ func (handler *CategoriesHandler) NewCategoryHandler(c *gin.Context) {
 		return
 	}
 
-	c.Header("Location", makeURL(c.Request, "/api/v1/categories/"+id.String()))
+	c.Header("Location", util.MakeURL(c.Request, "/api/v1/categories/"+id.String()))
 	c.JSON(http.StatusCreated, gin.H{"id": id})
 }
 

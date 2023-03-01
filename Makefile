@@ -32,13 +32,12 @@ fmt: ## gofmt and goimports all go files
 	find . -name '*.go' -not -wholename './vendor/*' | while read -r file; do gofmt -w -s "$$file"; goimports -w "$$file"; done
 
 build-mocks:
-	@~/go/bin/mockgen -source internal/app/repository/place_repository_interface.go -destination internal/app/repository/mock/place_repository_mock.go -package mock
-	@~/go/bin/mockgen -source internal/app/repository/category_repository_interface.go -destination internal/app/repository/mock/category_repository_mock.go -package mock
-	@~/go/bin/mockgen -source internal/app/repository/user_repository_interface.go -destination internal/app/repository/mock/user_repository_mock.go -package mock
-	@~/go/bin/mockgen -source internal/app/repository/place_cache_repository_interface.go -destination internal/app/repository/mock/place_cache_repository_mock.go -package mock
-	@~/go/bin/mockgen -source internal/app/service/place_service_interface.go -destination internal/app/service/mock/place_service_mock.go -package mock
-	@~/go/bin/mockgen -source internal/app/service/category_service_interface.go -destination internal/app/service/mock/category_service_mock.go -package mock
-	@~/go/bin/mockgen -source internal/app/service/auth_service_interface.go -destination internal/app/service/mock/auth_service_mock.go -package mock
+	@mockgen -source internal/app/api/handlers/place/place.go -destination internal/app/api/handlers/place/mock/place.go -package mock
+	@mockgen -source internal/app/api/handlers/category/category.go -destination internal/app/api/handlers/category/mock/category.go -package mock
+	@mockgen -source internal/app/api/handlers/auth/auth.go -destination internal/app/api/handlers/auth/mock/auth.go -package mock
+	@mockgen -source internal/app/service/place.go -destination internal/app/service/mock/place.go -package mock
+	@mockgen -source internal/app/service/category.go -destination internal/app/service/mock/category.go -package mock
+	@mockgen -source internal/app/service/auth.go -destination internal/app/service/mock/auth.go -package mock
 
 migrate-up:
 	migrate $(migrateArgs) up $(if $n,$n,)

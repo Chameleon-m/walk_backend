@@ -16,8 +16,6 @@ type PlaceCacheRedisRepository struct {
 	ctx    context.Context
 }
 
-var _ PlaceCacheRepositoryInterface = (*PlaceCacheRedisRepository)(nil)
-
 // NewPlaceCacheRedisRepository create new redis place cache repository
 func NewPlaceCacheRedisRepository(ctx context.Context, сlient *redis.Client) *PlaceCacheRedisRepository {
 	return &PlaceCacheRedisRepository{

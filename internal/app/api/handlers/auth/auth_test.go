@@ -1,4 +1,4 @@
-package handlers
+package auth
 
 import (
 	"bytes"
@@ -8,11 +8,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	authMock "walk_backend/internal/app/api/handlers/auth/mock"
 	"walk_backend/internal/app/api/presenter"
 	"walk_backend/internal/app/dto"
 	"walk_backend/internal/app/model"
 	"walk_backend/internal/app/service"
-	mockService "walk_backend/internal/app/service/mock"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
@@ -37,9 +37,9 @@ func TestAuthHandler_Registration(t *testing.T) {
 	router := gin.Default()
 	apiV1 := router.Group("/api/v1")
 
-	mockAuthService := mockService.NewMockAuthServiceInteface(controller)
+	mockAuthService := authMock.NewMockServiceInterface(controller)
 
-	mh := NewAuthHandler(context.Background(), mockAuthService, presenter.NewTokenPresenter())
+	mh := NewHandler(context.Background(), mockAuthService, presenter.NewTokenPresenter())
 	mh.MakeHandlers(apiV1)
 
 	t.Run("Ok", func(t *testing.T) {

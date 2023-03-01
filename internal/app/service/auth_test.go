@@ -6,7 +6,7 @@ import (
 	"walk_backend/internal/app/dto"
 
 	"walk_backend/internal/app/model"
-	mockRepository "walk_backend/internal/app/repository/mock"
+	mockAuth "walk_backend/internal/app/service/mock"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -22,7 +22,7 @@ func TestAuthService_Registration(t *testing.T) {
 	controller := gomock.NewController(t)
 	defer controller.Finish()
 
-	mockUserRepository := mockRepository.NewMockUserRepositoryInterface(controller)
+	mockUserRepository := mockAuth.NewMockUserRepositoryInterface(controller)
 
 	t.Run("ErrInvalidUsernameOrPassword", func(t *testing.T) {
 
@@ -53,7 +53,7 @@ func TestAuthService_Login(t *testing.T) {
 	controller := gomock.NewController(t)
 	defer controller.Finish()
 
-	mockUserRepository := mockRepository.NewMockUserRepositoryInterface(controller)
+	mockUserRepository := mockAuth.NewMockUserRepositoryInterface(controller)
 
 	t.Run("ErrInvalidUsernameOrPassword", func(t *testing.T) {
 
