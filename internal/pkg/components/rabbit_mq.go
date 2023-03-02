@@ -56,10 +56,8 @@ func (c *rabbitMQComponent) GetClient() *rabbitmq.Publisher {
 
 func (c *rabbitMQComponent) Start(ctx context.Context) error {
 
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
+	if err := ctx.Err(); err != nil {
+		return err
 	}
 
 	c.m.Lock()

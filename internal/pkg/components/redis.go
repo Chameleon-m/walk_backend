@@ -71,10 +71,8 @@ func (c *redisComponent) GetClient() *redis.Client {
 
 func (c *redisComponent) Start(ctx context.Context) error {
 
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
+	if err := ctx.Err(); err != nil {
+		return err
 	}
 
 	c.m.Lock()

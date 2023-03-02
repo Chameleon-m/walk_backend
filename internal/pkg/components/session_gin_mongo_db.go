@@ -77,10 +77,8 @@ func NewSessionGinMongoDB(
 
 func (c *sessionGinMongoDBComponent) Start(ctx context.Context) error {
 
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
+	if err := ctx.Err(); err != nil {
+		return err
 	}
 
 	c.log.Print("Start connected to Session store")

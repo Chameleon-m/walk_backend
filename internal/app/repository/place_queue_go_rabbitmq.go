@@ -84,6 +84,10 @@ func (r *PlaceQueueRabbitRepository) PublishReIndex(id model.ID) error {
 	}
 
 	for {
+		if err := r.ctx.Err(); err != nil {
+			return err
+		}
+
 		select {
 		case <-r.ctx.Done():
 			return r.ctx.Err()
