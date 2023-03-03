@@ -29,6 +29,7 @@ type TokenPresenterInterface interface {
 // AuthHandler auth handler
 type AuthHandler struct {
 	ctx       context.Context
+	router    *gin.RouterGroup
 	service   ServiceInterface
 	presenter TokenPresenterInterface
 }
@@ -36,11 +37,13 @@ type AuthHandler struct {
 // NewHandler create new auth handler
 func NewHandler(
 	ctx context.Context,
+	router *gin.RouterGroup,
 	service ServiceInterface,
 	presenter TokenPresenterInterface,
 ) *AuthHandler {
 	return &AuthHandler{
 		ctx:       ctx,
+		router:    router,
 		service:   service,
 		presenter: presenter,
 	}
@@ -194,11 +197,16 @@ func (handler *AuthHandler) SignOutHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Signed out..."})
 }
 
-// MakeHandlers make handlers
-func (handler *AuthHandler) MakeHandlers(router *gin.RouterGroup) {
+// Make ...
+func (handler *AuthHandler) Make() {
+	handler.MakeRoutes()
+}
 
-	router.POST("/auth/registration", handler.SignUpHandler)
-	router.POST("/auth/login", handler.SignInHandler)
-	router.POST("/auth/refresh-tokens", handler.RefreshHandler)
-	router.POST("/auth/logout", handler.SignOutHandler)
+// MakeRoutes make handlers
+func (handler *AuthHandler) MakeRoutes() {
+
+	handler.router.POST("/auth/registration", handler.SignUpHandler)
+	handler.router.POST("/auth/login", handler.SignInHandler)
+	handler.router.POST("/auth/refresh-tokens", handler.RefreshHandler)
+	handler.router.POST("/auth/logout", handler.SignOutHandler)
 }

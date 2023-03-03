@@ -39,8 +39,8 @@ func TestAuthHandler_Registration(t *testing.T) {
 
 	mockAuthService := authMock.NewMockServiceInterface(controller)
 
-	mh := NewHandler(context.Background(), mockAuthService, presenter.NewTokenPresenter())
-	mh.MakeHandlers(apiV1)
+	mh := NewHandler(context.Background(), apiV1, mockAuthService, presenter.NewTokenPresenter())
+	mh.MakeRoutes()
 
 	t.Run("Ok", func(t *testing.T) {
 

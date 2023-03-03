@@ -35,17 +35,27 @@ type PresenterInterface interface {
 
 // PlacesHandler ...
 type PlacesHandler struct {
-	ctx       context.Context
-	service   ServiceInterface
-	presenter PresenterInterface
+	ctx        context.Context
+	router     *gin.RouterGroup
+	routerAuth *gin.RouterGroup
+	service    ServiceInterface
+	presenter  PresenterInterface
 }
 
 // NewHandler ...
-func NewHandler(ctx context.Context, service ServiceInterface, presenter PresenterInterface) *PlacesHandler {
+func NewHandler(
+	ctx context.Context,
+	router *gin.RouterGroup,
+	routerAuth *gin.RouterGroup,
+	service ServiceInterface,
+	presenter PresenterInterface,
+) *PlacesHandler {
 	return &PlacesHandler{
-		service:   service,
-		ctx:       ctx,
-		presenter: presenter,
+		ctx:        ctx,
+		router:     router,
+		routerAuth: routerAuth,
+		service:    service,
+		presenter:  presenter,
 	}
 }
 
@@ -303,21 +313,26 @@ func (handler *PlacesHandler) SearchPlacesHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": data})
 }
 
+// Make ...
+func (handler *PlacesHandler) Make() {
+	handler.MakeRoutes()
+	handler.MakeRequestValidation()
+}
+
 // MakeHandlers make places routes
-func (handler *PlacesHandler) MakeHandlers(router *gin.RouterGroup, routerAuth *gin.RouterGroup) {
+func (handler *PlacesHandler) MakeRoutes() {
 
-	router.GET("/places", handler.ListPlacesHandler)
-	router.GET("/places/:id", handler.GetOnePlaceHandler)
-	router.GET("/places/search", handler.SearchPlacesHandler)
+	handler.router.GET("/places", handler.ListPlacesHandler)
+	handler.router.GET("/places/:id", handler.GetOnePlaceHandler)
+	handler.router.GET("/places/search", handler.SearchPlacesHandler)
 
-	routerAuth.POST("/places", handler.NewPlaceHandler)
-	routerAuth.PUT("/places/:id", handler.UpdatePlaceHandler)
-	routerAuth.DELETE("/places/:id", handler.DeletePlaceHandler)
+	handler.routerAuth.POST("/places", handler.NewPlaceHandler)
+	handler.routerAuth.PUT("/places/:id", handler.UpdatePlaceHandler)
+	handler.routerAuth.DELETE("/places/:id", handler.DeletePlaceHandler)
 }
 
 // MakeRequestValidation make request validation
 func (handler *PlacesHandler) MakeRequestValidation() {
-
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		v.RegisterStructValidation(dto.ValidatePlaceDTO, dto.NewPlaceDTO())
 	}

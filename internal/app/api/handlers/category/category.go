@@ -29,21 +29,27 @@ type PresenterInterface interface {
 
 // CategoriesHandler categories handler struct
 type CategoriesHandler struct {
-	ctx       context.Context
-	service   ServiceInterface
-	presenter PresenterInterface
+	ctx        context.Context
+	router     *gin.RouterGroup
+	routerAuth *gin.RouterGroup
+	service    ServiceInterface
+	presenter  PresenterInterface
 }
 
 // NewHandler create new categories handler
 func NewHandler(
 	ctx context.Context,
+	router *gin.RouterGroup,
+	routerAuth *gin.RouterGroup,
 	service ServiceInterface,
 	presenter PresenterInterface,
 ) *CategoriesHandler {
 	return &CategoriesHandler{
-		service:   service,
-		ctx:       ctx,
-		presenter: presenter,
+		ctx:        ctx,
+		router:     router,
+		routerAuth: routerAuth,
+		service:    service,
+		presenter:  presenter,
 	}
 }
 
@@ -240,13 +246,18 @@ func (handler *CategoriesHandler) GetOneCategoryHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": data})
 }
 
-// MakeHandlers ...
-func (handler *CategoriesHandler) MakeHandlers(router *gin.RouterGroup, routerAuth *gin.RouterGroup) {
+// Make ...
+func (handler *CategoriesHandler) Make() {
+	handler.MakeRoutes()
+}
 
-	router.GET("/categories", handler.ListCategoriesHandler)
-	router.GET("/categories/:id", handler.GetOneCategoryHandler)
+// MakeRoutes ...
+func (handler *CategoriesHandler) MakeRoutes() {
 
-	routerAuth.POST("/categories", handler.NewCategoryHandler)
-	routerAuth.PUT("/categories/:id", handler.UpdateCategryHandler)
-	routerAuth.DELETE("/categories/:id", handler.DeleteCategoryHandler)
+	handler.router.GET("/categories", handler.ListCategoriesHandler)
+	handler.router.GET("/categories/:id", handler.GetOneCategoryHandler)
+
+	handler.routerAuth.POST("/categories", handler.NewCategoryHandler)
+	handler.routerAuth.PUT("/categories/:id", handler.UpdateCategryHandler)
+	handler.routerAuth.DELETE("/categories/:id", handler.DeleteCategoryHandler)
 }

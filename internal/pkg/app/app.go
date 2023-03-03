@@ -8,7 +8,6 @@ import (
 	"syscall"
 	"time"
 
-	"walk_backend/internal/app/api/handlers"
 	"walk_backend/internal/app/api/handlers/auth"
 	"walk_backend/internal/app/api/handlers/category"
 	"walk_backend/internal/app/api/handlers/place"
@@ -26,8 +25,13 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+// HandlersInterface ...
+type HandlersInterface interface {
+	// Make routes, validation, etc
+	Make()
+}
+
 type App struct {
-	handlers  handlers.HandlersInterface
 	engine    *gin.Engine
 	cfg       *Config
 	ctx       context.Context
@@ -178,21 +182,24 @@ func (app *App) Run() {
 	apiV1auth.Use(sessionMidlleware)
 	apiV1auth.Use(authMiddleware)
 
-	app.handlers = handlers.New(app, apiV1, apiV1auth)
+	// Build handlers
+	var authHandlers, categoryHandlers, placeHandlers HandlersInterface
 
 	// auth
 	collectionUsers := mongoClient.Database(mongoDefaultDB).Collection("users")
 	userMongoRepository := repository.NewUserMongoRepository(app.ctx, collectionUsers)
 	authService := service.NewDefaultAuthService(userMongoRepository)
 	tokenPresenter := presenter.NewTokenPresenter()
-	app.handlers.SetAuthHandler(auth.NewHandler(app.ctx, authService, tokenPresenter))
+	authHandlers = auth.NewHandler(app.ctx, apiV1, authService, tokenPresenter)
+	authHandlers.Make()
 
 	// category
 	collectionCategories := mongoClient.Database(mongoDefaultDB).Collection("categories")
 	categoryMongoRepository := repository.NewCategoryMongoRepository(app.ctx, collectionCategories)
 	categoryService := service.NewDefaultCategoryService(categoryMongoRepository)
 	categoryPresenter := presenter.NewCategoryPresenter()
-	app.handlers.SetCategoriesHandler(category.NewHandler(app.ctx, categoryService, categoryPresenter))
+	categoryHandlers = category.NewHandler(app.ctx, apiV1, apiV1auth, categoryService, categoryPresenter)
+	categoryHandlers.Make()
 
 	// place
 	collectionPlaces := mongoClient.Database(mongoDefaultDB).Collection("places")
@@ -213,9 +220,8 @@ func (app *App) Run() {
 		keyBuilder,
 	)
 	placePresenter := presenter.NewPlacePresenter()
-	app.handlers.SetPlacesHandler(place.NewHandler(app.ctx, placeService, placePresenter))
-
-	app.handlers.Make()
+	placeHandlers = place.NewHandler(app.ctx, apiV1, apiV1auth, placeService, placePresenter)
+	placeHandlers.Make()
 
 	app.engine.GET("/version", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"version": app.cfg.Version})
