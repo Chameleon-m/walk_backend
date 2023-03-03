@@ -14,19 +14,17 @@ import (
 // UserMongoRepository category mongodb repo
 type UserMongoRepository struct {
 	collection *mongo.Collection
-	ctx        context.Context
 }
 
 // NewUserMongoRepository create new user mongo repository
-func NewUserMongoRepository(ctx context.Context, collection *mongo.Collection) *UserMongoRepository {
+func NewUserMongoRepository(collection *mongo.Collection) *UserMongoRepository {
 	return &UserMongoRepository{
 		collection: collection,
-		ctx:        ctx,
 	}
 }
 
 // Create ...
-func (r *UserMongoRepository) Create(m *model.User) (model.ID, error) {
+func (r *UserMongoRepository) Create(ctx context.Context, m *model.User) (model.ID, error) {
 	if m.ID.IsNil() {
 		id, err := model.NewID()
 		if err != nil {
@@ -36,15 +34,15 @@ func (r *UserMongoRepository) Create(m *model.User) (model.ID, error) {
 	}
 
 	m.CreatedAt = time.Now()
-	_, err := r.collection.InsertOne(r.ctx, m)
+	_, err := r.collection.InsertOne(ctx, m)
 
 	return m.ID, err
 }
 
 // FindByUsername user bu username
-func (r *UserMongoRepository) FindByUsername(username string) (*model.User, error) {
+func (r *UserMongoRepository) FindByUsername(ctx context.Context, username string) (*model.User, error) {
 
-	cur := r.collection.FindOne(r.ctx, bson.M{
+	cur := r.collection.FindOne(ctx, bson.M{
 		"username": username,
 	})
 

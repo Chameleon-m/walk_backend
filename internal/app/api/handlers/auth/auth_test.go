@@ -49,7 +49,7 @@ func TestAuthHandler_Registration(t *testing.T) {
 
 		mockAuthService.
 			EXPECT().
-			Registration(&credentialsCase[0]).
+			Registration(context.Background(), &credentialsCase[0]).
 			Return(user, nil).
 			Times(1)
 
@@ -89,7 +89,7 @@ func TestAuthHandler_Registration(t *testing.T) {
 
 		mockAuthService.
 			EXPECT().
-			Registration(&credentialsCase[3]).
+			Registration(context.Background(), &credentialsCase[3]).
 			Return(nil, service.ErrInvalidUsernameOrPassword).
 			Times(1)
 
@@ -106,7 +106,7 @@ func TestAuthHandler_Registration(t *testing.T) {
 
 		mockAuthService.
 			EXPECT().
-			Registration(&credentialsCase[4]).
+			Registration(context.Background(), &credentialsCase[4]).
 			Return(nil, model.ErrInvalidModel).
 			Times(1)
 

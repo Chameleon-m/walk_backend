@@ -17,14 +17,14 @@ import (
 
 // ServiceInterface ...
 type ServiceInterface interface {
-	ListPlaces() (model.PlaceList, error)
-	Create(dto *dto.Place) (model.ID, error)
-	Update(dto *dto.Place) error
-	Delete(id model.ID) error
-	Find(id model.ID) (*model.Place, error)
-	Search(search string) (model.PlaceList, error)
-	ListCategories() (model.CategoryList, error)
-	FindCategory(id model.ID) (*model.Category, error)
+	ListPlaces(ctx context.Context) (model.PlaceList, error)
+	Create(ctx context.Context, dto *dto.Place) (model.ID, error)
+	Update(ctx context.Context, dto *dto.Place) error
+	Delete(ctx context.Context, id model.ID) error
+	Find(ctx context.Context, id model.ID) (*model.Place, error)
+	Search(ctx context.Context, search string) (model.PlaceList, error)
+	ListCategories(ctx context.Context) (model.CategoryList, error)
+	FindCategory(ctx context.Context, id model.ID) (*model.Category, error)
 }
 
 // PresenterInterface ...
@@ -72,14 +72,14 @@ func NewHandler(
 //	  description: Successful operation
 func (handler *PlacesHandler) ListPlacesHandler(c *gin.Context) {
 
-	placeList, err := handler.service.ListPlaces()
+	placeList, err := handler.service.ListPlaces(handler.ctx)
 	if err != nil {
 		_ = c.Error(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	categoryList, err := handler.service.ListCategories()
+	categoryList, err := handler.service.ListCategories(handler.ctx)
 	if err != nil {
 		_ = c.Error(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -115,7 +115,7 @@ func (handler *PlacesHandler) NewPlaceHandler(c *gin.Context) {
 		return
 	}
 
-	id, err := handler.service.Create(dto)
+	id, err := handler.service.Create(handler.ctx, dto)
 	if err != nil {
 		_ = c.Error(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -157,7 +157,7 @@ func (handler *PlacesHandler) UpdatePlaceHandler(c *gin.Context) {
 		return
 	}
 
-	if err := handler.service.Update(dto); err != nil {
+	if err := handler.service.Update(handler.ctx, dto); err != nil {
 		_ = c.Error(err)
 		if errors.Is(err, model.ErrModelNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
@@ -203,7 +203,7 @@ func (handler *PlacesHandler) DeletePlaceHandler(c *gin.Context) {
 		return
 	}
 
-	if err := handler.service.Delete(placeID); err != nil {
+	if err := handler.service.Delete(handler.ctx, placeID); err != nil {
 		_ = c.Error(err)
 		if errors.Is(err, model.ErrModelNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
@@ -246,7 +246,7 @@ func (handler *PlacesHandler) GetOnePlaceHandler(c *gin.Context) {
 		return
 	}
 
-	place, err := handler.service.Find(placeID)
+	place, err := handler.service.Find(handler.ctx, placeID)
 	if err != nil {
 		_ = c.Error(err)
 		if errors.Is(err, model.ErrModelNotFound) {
@@ -257,7 +257,7 @@ func (handler *PlacesHandler) GetOnePlaceHandler(c *gin.Context) {
 		return
 	}
 
-	category, err := handler.service.FindCategory(place.Category)
+	category, err := handler.service.FindCategory(handler.ctx, place.Category)
 	if err != nil {
 		_ = c.Error(err)
 		if errors.Is(err, model.ErrModelNotFound) {
@@ -292,14 +292,14 @@ func (handler *PlacesHandler) GetOnePlaceHandler(c *gin.Context) {
 //	  description: Successful operation
 func (handler *PlacesHandler) SearchPlacesHandler(c *gin.Context) {
 	search := c.Query("q")
-	placeList, err := handler.service.Search(search)
+	placeList, err := handler.service.Search(handler.ctx, search)
 	if err != nil {
 		_ = c.Error(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	categoryList, err := handler.service.ListCategories()
+	categoryList, err := handler.service.ListCategories(handler.ctx)
 	if err != nil {
 		_ = c.Error(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"testing"
 
 	"walk_backend/internal/app/dto"
@@ -38,12 +39,12 @@ func TestAuthService_Registration(t *testing.T) {
 
 		mockUserRepository.
 			EXPECT().
-			FindByUsername(testCase.credentials.Username).
+			FindByUsername(context.Background(), testCase.credentials.Username).
 			Return(userModel, nil).
 			Times(1)
 
 		das := NewDefaultAuthService(mockUserRepository)
-		_, err := das.Registration(&testCase.credentials)
+		_, err := das.Registration(context.Background(), &testCase.credentials)
 		assert.ErrorIs(t, err, testCase.err)
 	})
 }
@@ -68,12 +69,12 @@ func TestAuthService_Login(t *testing.T) {
 
 			mockUserRepository.
 				EXPECT().
-				FindByUsername(testCase.credentials.Username).
+				FindByUsername(context.Background(), testCase.credentials.Username).
 				Return(nil, model.ErrModelNotFound).
 				Times(1)
 
 			das := NewDefaultAuthService(mockUserRepository)
-			_, err := das.Login(&testCase.credentials)
+			_, err := das.Login(context.Background(), &testCase.credentials)
 			assert.ErrorIs(t, err, testCase.err)
 		}
 	})

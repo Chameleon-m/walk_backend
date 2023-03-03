@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"time"
 
 	"walk_backend/internal/app/dto"
@@ -19,18 +20,18 @@ const (
 
 // PlaceRepositoryInterface ...
 type PlaceRepositoryInterface interface {
-	Find(id model.ID) (*model.Place, error)
-	FindAll() (model.PlaceList, error)
-	Create(m *model.Place) (model.ID, error)
-	Update(m *model.Place) error
-	Delete(id model.ID) error
-	Search(search string) (model.PlaceList, error)
+	Find(ctx context.Context, id model.ID) (*model.Place, error)
+	FindAll(ctx context.Context) (model.PlaceList, error)
+	Create(ctx context.Context, m *model.Place) (model.ID, error)
+	Update(ctx context.Context, m *model.Place) error
+	Delete(ctx context.Context, id model.ID) error
+	Search(ctx context.Context, search string) (model.PlaceList, error)
 }
 
 // PlaceCategoryRepositoryInterface ...
 type PlaceCategoryRepositoryInterface interface {
-	Find(id model.ID) (*model.Category, error)
-	FindAll() (model.CategoryList, error)
+	Find(ctx context.Context, id model.ID) (*model.Category, error)
+	FindAll(ctx context.Context) (model.CategoryList, error)
 }
 
 // PlaceQueueRepositoryInterface ...
@@ -40,9 +41,9 @@ type PlaceQueueRepositoryInterface interface {
 
 // PlaceCacheRepositoryInterface ...
 type PlaceCacheRepositoryInterface interface {
-	Get(key string) (model.PlaceList, error)
-	Set(key string, value model.PlaceList, expiration time.Duration) error
-	Del(keys ...string) error
+	Get(ctx context.Context, key string) (model.PlaceList, error)
+	Set(ctx context.Context, key string, value model.PlaceList, expiration time.Duration) error
+	Del(ctx context.Context, keys ...string) error
 }
 
 // DefaultPlaceService ...
@@ -72,21 +73,21 @@ func NewDefaultPlaceService(
 }
 
 // ListPlaces ...
-func (s *DefaultPlaceService) ListPlaces() (model.PlaceList, error) {
+func (s *DefaultPlaceService) ListPlaces(ctx context.Context) (model.PlaceList, error) {
 
-	places, err := s.placeCache.Get(listPlacesCacheKey)
+	places, err := s.placeCache.Get(ctx, listPlacesCacheKey)
 	if err != nil {
 		return nil, err
 	} else if places != nil {
 		return places, nil
 	}
 
-	places, err = s.placeRepo.FindAll()
+	places, err = s.placeRepo.FindAll(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if err = s.placeCache.Set(listPlacesCacheKey, places, listPlacesCacheDuration); err != nil {
+	if err = s.placeCache.Set(ctx, listPlacesCacheKey, places, listPlacesCacheDuration); err != nil {
 		return nil, err
 	}
 
@@ -94,20 +95,20 @@ func (s *DefaultPlaceService) ListPlaces() (model.PlaceList, error) {
 }
 
 // Create ...
-func (s *DefaultPlaceService) Create(d *dto.Place) (model.ID, error) {
+func (s *DefaultPlaceService) Create(ctx context.Context, d *dto.Place) (model.ID, error) {
 
-	m, err := s.makeModelFromPlaceDTO(d)
+	m, err := s.makeModelFromPlaceDTO(ctx, d)
 	if err != nil {
 		return model.NilID, err
 	}
 	m.CreatedAt = time.Now()
 
-	id, err := s.placeRepo.Create(m)
+	id, err := s.placeRepo.Create(ctx, m)
 	if err != nil {
 		return model.NilID, err
 	}
 
-	if err := s.placeCache.Del(listPlacesCacheKey); err != nil {
+	if err := s.placeCache.Del(ctx, listPlacesCacheKey); err != nil {
 		return model.NilID, err
 	}
 
@@ -119,19 +120,19 @@ func (s *DefaultPlaceService) Create(d *dto.Place) (model.ID, error) {
 }
 
 // Update ...
-func (s *DefaultPlaceService) Update(d *dto.Place) error {
+func (s *DefaultPlaceService) Update(ctx context.Context, d *dto.Place) error {
 
-	m, err := s.makeModelFromPlaceDTO(d)
+	m, err := s.makeModelFromPlaceDTO(ctx, d)
 	if err != nil {
 		return err
 	}
 	m.UpdatedAt = time.Now()
 
-	if err := s.placeRepo.Update(m); err != nil {
+	if err := s.placeRepo.Update(ctx, m); err != nil {
 		return err
 	}
 
-	if err := s.placeCache.Del(listPlacesCacheKey); err != nil {
+	if err := s.placeCache.Del(ctx, listPlacesCacheKey); err != nil {
 		return err
 	}
 
@@ -143,13 +144,13 @@ func (s *DefaultPlaceService) Update(d *dto.Place) error {
 }
 
 // Delete ...
-func (s *DefaultPlaceService) Delete(id model.ID) error {
+func (s *DefaultPlaceService) Delete(ctx context.Context, id model.ID) error {
 
-	if err := s.placeRepo.Delete(id); err != nil {
+	if err := s.placeRepo.Delete(ctx, id); err != nil {
 		return err
 	}
 
-	if err := s.placeCache.Del(listPlacesCacheKey); err != nil {
+	if err := s.placeCache.Del(ctx, listPlacesCacheKey); err != nil {
 		return err
 	}
 
@@ -161,12 +162,12 @@ func (s *DefaultPlaceService) Delete(id model.ID) error {
 }
 
 // Find ...
-func (s *DefaultPlaceService) Find(id model.ID) (*model.Place, error) {
-	return s.placeRepo.Find(id)
+func (s *DefaultPlaceService) Find(ctx context.Context, id model.ID) (*model.Place, error) {
+	return s.placeRepo.Find(ctx, id)
 }
 
 // Search ...
-func (s *DefaultPlaceService) Search(search string) (model.PlaceList, error) {
+func (s *DefaultPlaceService) Search(ctx context.Context, search string) (model.PlaceList, error) {
 
 	key := s.keyBuilder.NewKey()
 	key.Add(searchListPlacesCacheKey)
@@ -175,19 +176,19 @@ func (s *DefaultPlaceService) Search(search string) (model.PlaceList, error) {
 	}
 	cacheKey := key.String()
 
-	places, err := s.placeCache.Get(cacheKey)
+	places, err := s.placeCache.Get(ctx, cacheKey)
 	if err != nil {
 		return nil, err
 	} else if places != nil {
 		return places, nil
 	}
 
-	places, err = s.placeRepo.Search(search)
+	places, err = s.placeRepo.Search(ctx, search)
 	if err != nil {
 		return nil, err
 	}
 
-	if err = s.placeCache.Set(cacheKey, places, searchListPlacesCacheDuration); err != nil {
+	if err = s.placeCache.Set(ctx, cacheKey, places, searchListPlacesCacheDuration); err != nil {
 		return nil, err
 	}
 
@@ -195,16 +196,16 @@ func (s *DefaultPlaceService) Search(search string) (model.PlaceList, error) {
 }
 
 // ListCategories ...
-func (s *DefaultPlaceService) ListCategories() (model.CategoryList, error) {
-	return s.categoryRepo.FindAll()
+func (s *DefaultPlaceService) ListCategories(ctx context.Context) (model.CategoryList, error) {
+	return s.categoryRepo.FindAll(ctx)
 }
 
 // FindCategory ...
-func (s *DefaultPlaceService) FindCategory(id model.ID) (*model.Category, error) {
-	return s.categoryRepo.Find(id)
+func (s *DefaultPlaceService) FindCategory(ctx context.Context, id model.ID) (*model.Category, error) {
+	return s.categoryRepo.Find(ctx, id)
 }
 
-func (s *DefaultPlaceService) makeModelFromPlaceDTO(d *dto.Place) (*model.Place, error) {
+func (s *DefaultPlaceService) makeModelFromPlaceDTO(ctx context.Context, d *dto.Place) (*model.Place, error) {
 
 	var id model.ID
 	var err error
@@ -223,7 +224,7 @@ func (s *DefaultPlaceService) makeModelFromPlaceDTO(d *dto.Place) (*model.Place,
 		return nil, err
 	}
 
-	if _, err := s.categoryRepo.Find(categoryID); err != nil {
+	if _, err := s.categoryRepo.Find(ctx, categoryID); err != nil {
 		return nil, err
 	}
 

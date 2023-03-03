@@ -14,21 +14,19 @@ import (
 // CategoryMongoRepository category mongodb repo
 type CategoryMongoRepository struct {
 	collection *mongo.Collection
-	ctx        context.Context
 }
 
 // NewCategoryMongoRepository create new mongo category repository
-func NewCategoryMongoRepository(ctx context.Context, collection *mongo.Collection) *CategoryMongoRepository {
+func NewCategoryMongoRepository(collection *mongo.Collection) *CategoryMongoRepository {
 	return &CategoryMongoRepository{
 		collection: collection,
-		ctx:        ctx,
 	}
 }
 
 // Find category
-func (r *CategoryMongoRepository) Find(id model.ID) (*model.Category, error) {
+func (r *CategoryMongoRepository) Find(ctx context.Context, id model.ID) (*model.Category, error) {
 
-	cur := r.collection.FindOne(r.ctx, bson.M{
+	cur := r.collection.FindOne(ctx, bson.M{
 		"_id": id,
 	})
 
@@ -48,16 +46,16 @@ func (r *CategoryMongoRepository) Find(id model.ID) (*model.Category, error) {
 }
 
 // FindAll categories
-func (r *CategoryMongoRepository) FindAll() (model.CategoryList, error) {
+func (r *CategoryMongoRepository) FindAll(ctx context.Context) (model.CategoryList, error) {
 
-	cursor, err := r.collection.Find(r.ctx, bson.M{})
+	cursor, err := r.collection.Find(ctx, bson.M{})
 	if err != nil {
 		return nil, err
 	}
-	defer cursor.Close(r.ctx)
+	defer cursor.Close(ctx)
 
 	mList := make(model.CategoryList, 0)
-	for cursor.Next(r.ctx) {
+	for cursor.Next(ctx) {
 		var m model.Category
 		if err := cursor.Decode(&m); err != nil {
 			return nil, err
@@ -69,7 +67,7 @@ func (r *CategoryMongoRepository) FindAll() (model.CategoryList, error) {
 }
 
 // Create ...
-func (r *CategoryMongoRepository) Create(m *model.Category) (model.ID, error) {
+func (r *CategoryMongoRepository) Create(ctx context.Context, m *model.Category) (model.ID, error) {
 
 	if m.ID.IsNil() {
 		id, err := model.NewID()
@@ -79,16 +77,16 @@ func (r *CategoryMongoRepository) Create(m *model.Category) (model.ID, error) {
 		m.ID = id
 	}
 
-	_, err := r.collection.InsertOne(r.ctx, m)
+	_, err := r.collection.InsertOne(ctx, m)
 
 	return m.ID, err
 }
 
 // Update ...
-func (r *CategoryMongoRepository) Update(m *model.Category) error {
+func (r *CategoryMongoRepository) Update(ctx context.Context, m *model.Category) error {
 
 	fmt.Println(m)
-	updateResult, err := r.collection.UpdateOne(r.ctx, bson.M{
+	updateResult, err := r.collection.UpdateOne(ctx, bson.M{
 		"_id": m.ID,
 	}, bson.D{{Key: "$set", Value: bson.D{
 		{Key: "name", Value: m.Name},
@@ -105,8 +103,8 @@ func (r *CategoryMongoRepository) Update(m *model.Category) error {
 }
 
 // Delete ...
-func (r *CategoryMongoRepository) Delete(id model.ID) error {
-	deleteResult, err := r.collection.DeleteOne(r.ctx, bson.M{
+func (r *CategoryMongoRepository) Delete(ctx context.Context, id model.ID) error {
+	deleteResult, err := r.collection.DeleteOne(ctx, bson.M{
 		"_id": id,
 	})
 

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 
 	"walk_backend/internal/app/dto"
@@ -16,8 +17,8 @@ var (
 
 // UserRepositoryInterface ...
 type UserRepositoryInterface interface {
-	Create(m *model.User) (model.ID, error)
-	FindByUsername(username string) (*model.User, error)
+	Create(ctx context.Context, m *model.User) (model.ID, error)
+	FindByUsername(ctx context.Context, username string) (*model.User, error)
 }
 
 // DefaultAuthService ...
@@ -33,9 +34,9 @@ func NewDefaultAuthService(userRepo UserRepositoryInterface) *DefaultAuthService
 }
 
 // Registration ...
-func (s *DefaultAuthService) Registration(dto *dto.AuthLogin) (*model.User, error) {
+func (s *DefaultAuthService) Registration(ctx context.Context, dto *dto.AuthLogin) (*model.User, error) {
 
-	user, err := s.userRepo.FindByUsername(dto.Username)
+	user, err := s.userRepo.FindByUsername(ctx, dto.Username)
 	if err != nil && !errors.Is(err, model.ErrModelNotFound) {
 		return nil, err
 	} else if user != nil {
@@ -47,7 +48,7 @@ func (s *DefaultAuthService) Registration(dto *dto.AuthLogin) (*model.User, erro
 		return nil, err
 	}
 
-	if _, err := s.userRepo.Create(m); err != nil {
+	if _, err := s.userRepo.Create(ctx, m); err != nil {
 		return nil, err
 	}
 
@@ -55,9 +56,9 @@ func (s *DefaultAuthService) Registration(dto *dto.AuthLogin) (*model.User, erro
 }
 
 // Login ...
-func (s *DefaultAuthService) Login(dto *dto.AuthLogin) (*model.User, error) {
+func (s *DefaultAuthService) Login(ctx context.Context, dto *dto.AuthLogin) (*model.User, error) {
 
-	user, err := s.userRepo.FindByUsername(dto.Username)
+	user, err := s.userRepo.FindByUsername(ctx, dto.Username)
 	if err != nil {
 		if errors.Is(err, model.ErrModelNotFound) {
 			return nil, ErrInvalidUsernameOrPassword

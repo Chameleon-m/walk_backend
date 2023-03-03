@@ -16,8 +16,8 @@ import (
 
 // ServiceInterface ...
 type ServiceInterface interface {
-	Registration(dto *dto.AuthLogin) (*model.User, error)
-	Login(dto *dto.AuthLogin) (*model.User, error)
+	Registration(ctx context.Context, dto *dto.AuthLogin) (*model.User, error)
+	Login(ctx context.Context, dto *dto.AuthLogin) (*model.User, error)
 	GenerateToken() (string, error)
 }
 
@@ -72,7 +72,7 @@ func (handler *AuthHandler) SignUpHandler(c *gin.Context) {
 		return
 	}
 
-	_, err := handler.service.Registration(dto)
+	_, err := handler.service.Registration(handler.ctx, dto)
 	if err != nil {
 		_ = c.Error(err)
 		if errors.Is(err, service.ErrInvalidUsernameOrPassword) {
@@ -109,7 +109,7 @@ func (handler *AuthHandler) SignInHandler(c *gin.Context) {
 		return
 	}
 
-	user, err := handler.service.Login(dto)
+	user, err := handler.service.Login(handler.ctx, dto)
 	if err != nil {
 		_ = c.Error(err)
 		if errors.Is(err, service.ErrInvalidUsernameOrPassword) {

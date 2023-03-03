@@ -103,11 +103,11 @@ func main() {
 
 	// category
 	collectionCategories := mongoClient.Database(mongoDB).Collection("categories")
-	categoryMongoRepository := repository.NewCategoryMongoRepository(ctx, collectionCategories)
+	categoryMongoRepository := repository.NewCategoryMongoRepository(collectionCategories)
 
 	// place
 	collectionPlaces := mongoClient.Database(mongoDB).Collection("places")
-	placeMongoRepository := repository.NewPlaceMongoRepository(ctx, collectionPlaces)
+	placeMongoRepository := repository.NewPlaceMongoRepository(collectionPlaces)
 	placeQueueRabbitRepository := repository.NewPlaceQueueRabbitRepository(ctx, publisher, exchange, routingKey)
 	placeService := service.NewDefaultPlaceService(placeMongoRepository, categoryMongoRepository, placeQueueRabbitRepository, nil, nil)
 
@@ -135,7 +135,7 @@ func main() {
 
 			log.Printf("received a place id: %s", id)
 
-			place, err := placeService.Find(id)
+			place, err := placeService.Find(ctx, id)
 			if err != nil {
 				if !d.Redelivered {
 					logErr.Error().Err(err).Caller().Str("id", id.String()).Msg("discard")

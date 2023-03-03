@@ -5,6 +5,7 @@
 package mock
 
 import (
+	context "context"
 	reflect "reflect"
 	model "walk_backend/internal/app/model"
 
@@ -35,74 +36,74 @@ func (m *MockCategoryRepositoryInterface) EXPECT() *MockCategoryRepositoryInterf
 }
 
 // Create mocks base method.
-func (m_2 *MockCategoryRepositoryInterface) Create(m *model.Category) (model.ID, error) {
+func (m_2 *MockCategoryRepositoryInterface) Create(ctx context.Context, m *model.Category) (model.ID, error) {
 	m_2.ctrl.T.Helper()
-	ret := m_2.ctrl.Call(m_2, "Create", m)
+	ret := m_2.ctrl.Call(m_2, "Create", ctx, m)
 	ret0, _ := ret[0].(model.ID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Create indicates an expected call of Create.
-func (mr *MockCategoryRepositoryInterfaceMockRecorder) Create(m interface{}) *gomock.Call {
+func (mr *MockCategoryRepositoryInterfaceMockRecorder) Create(ctx, m interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockCategoryRepositoryInterface)(nil).Create), m)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockCategoryRepositoryInterface)(nil).Create), ctx, m)
 }
 
 // Delete mocks base method.
-func (m *MockCategoryRepositoryInterface) Delete(id model.ID) error {
+func (m *MockCategoryRepositoryInterface) Delete(ctx context.Context, id model.ID) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", id)
+	ret := m.ctrl.Call(m, "Delete", ctx, id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockCategoryRepositoryInterfaceMockRecorder) Delete(id interface{}) *gomock.Call {
+func (mr *MockCategoryRepositoryInterfaceMockRecorder) Delete(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockCategoryRepositoryInterface)(nil).Delete), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockCategoryRepositoryInterface)(nil).Delete), ctx, id)
 }
 
 // Find mocks base method.
-func (m *MockCategoryRepositoryInterface) Find(id model.ID) (*model.Category, error) {
+func (m *MockCategoryRepositoryInterface) Find(ctx context.Context, id model.ID) (*model.Category, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Find", id)
+	ret := m.ctrl.Call(m, "Find", ctx, id)
 	ret0, _ := ret[0].(*model.Category)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Find indicates an expected call of Find.
-func (mr *MockCategoryRepositoryInterfaceMockRecorder) Find(id interface{}) *gomock.Call {
+func (mr *MockCategoryRepositoryInterfaceMockRecorder) Find(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Find", reflect.TypeOf((*MockCategoryRepositoryInterface)(nil).Find), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Find", reflect.TypeOf((*MockCategoryRepositoryInterface)(nil).Find), ctx, id)
 }
 
 // FindAll mocks base method.
-func (m *MockCategoryRepositoryInterface) FindAll() (model.CategoryList, error) {
+func (m *MockCategoryRepositoryInterface) FindAll(ctx context.Context) (model.CategoryList, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindAll")
+	ret := m.ctrl.Call(m, "FindAll", ctx)
 	ret0, _ := ret[0].(model.CategoryList)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // FindAll indicates an expected call of FindAll.
-func (mr *MockCategoryRepositoryInterfaceMockRecorder) FindAll() *gomock.Call {
+func (mr *MockCategoryRepositoryInterfaceMockRecorder) FindAll(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAll", reflect.TypeOf((*MockCategoryRepositoryInterface)(nil).FindAll))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAll", reflect.TypeOf((*MockCategoryRepositoryInterface)(nil).FindAll), ctx)
 }
 
 // Update mocks base method.
-func (m_2 *MockCategoryRepositoryInterface) Update(m *model.Category) error {
+func (m_2 *MockCategoryRepositoryInterface) Update(ctx context.Context, m *model.Category) error {
 	m_2.ctrl.T.Helper()
-	ret := m_2.ctrl.Call(m_2, "Update", m)
+	ret := m_2.ctrl.Call(m_2, "Update", ctx, m)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Update indicates an expected call of Update.
-func (mr *MockCategoryRepositoryInterfaceMockRecorder) Update(m interface{}) *gomock.Call {
+func (mr *MockCategoryRepositoryInterfaceMockRecorder) Update(ctx, m interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockCategoryRepositoryInterface)(nil).Update), m)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockCategoryRepositoryInterface)(nil).Update), ctx, m)
 }

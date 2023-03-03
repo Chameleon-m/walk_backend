@@ -5,6 +5,7 @@
 package mock
 
 import (
+	context "context"
 	reflect "reflect"
 	time "time"
 	model "walk_backend/internal/app/model"
@@ -36,91 +37,91 @@ func (m *MockPlaceRepositoryInterface) EXPECT() *MockPlaceRepositoryInterfaceMoc
 }
 
 // Create mocks base method.
-func (m_2 *MockPlaceRepositoryInterface) Create(m *model.Place) (model.ID, error) {
+func (m_2 *MockPlaceRepositoryInterface) Create(ctx context.Context, m *model.Place) (model.ID, error) {
 	m_2.ctrl.T.Helper()
-	ret := m_2.ctrl.Call(m_2, "Create", m)
+	ret := m_2.ctrl.Call(m_2, "Create", ctx, m)
 	ret0, _ := ret[0].(model.ID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Create indicates an expected call of Create.
-func (mr *MockPlaceRepositoryInterfaceMockRecorder) Create(m interface{}) *gomock.Call {
+func (mr *MockPlaceRepositoryInterfaceMockRecorder) Create(ctx, m interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockPlaceRepositoryInterface)(nil).Create), m)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockPlaceRepositoryInterface)(nil).Create), ctx, m)
 }
 
 // Delete mocks base method.
-func (m *MockPlaceRepositoryInterface) Delete(id model.ID) error {
+func (m *MockPlaceRepositoryInterface) Delete(ctx context.Context, id model.ID) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", id)
+	ret := m.ctrl.Call(m, "Delete", ctx, id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockPlaceRepositoryInterfaceMockRecorder) Delete(id interface{}) *gomock.Call {
+func (mr *MockPlaceRepositoryInterfaceMockRecorder) Delete(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockPlaceRepositoryInterface)(nil).Delete), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockPlaceRepositoryInterface)(nil).Delete), ctx, id)
 }
 
 // Find mocks base method.
-func (m *MockPlaceRepositoryInterface) Find(id model.ID) (*model.Place, error) {
+func (m *MockPlaceRepositoryInterface) Find(ctx context.Context, id model.ID) (*model.Place, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Find", id)
+	ret := m.ctrl.Call(m, "Find", ctx, id)
 	ret0, _ := ret[0].(*model.Place)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Find indicates an expected call of Find.
-func (mr *MockPlaceRepositoryInterfaceMockRecorder) Find(id interface{}) *gomock.Call {
+func (mr *MockPlaceRepositoryInterfaceMockRecorder) Find(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Find", reflect.TypeOf((*MockPlaceRepositoryInterface)(nil).Find), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Find", reflect.TypeOf((*MockPlaceRepositoryInterface)(nil).Find), ctx, id)
 }
 
 // FindAll mocks base method.
-func (m *MockPlaceRepositoryInterface) FindAll() (model.PlaceList, error) {
+func (m *MockPlaceRepositoryInterface) FindAll(ctx context.Context) (model.PlaceList, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindAll")
+	ret := m.ctrl.Call(m, "FindAll", ctx)
 	ret0, _ := ret[0].(model.PlaceList)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // FindAll indicates an expected call of FindAll.
-func (mr *MockPlaceRepositoryInterfaceMockRecorder) FindAll() *gomock.Call {
+func (mr *MockPlaceRepositoryInterfaceMockRecorder) FindAll(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAll", reflect.TypeOf((*MockPlaceRepositoryInterface)(nil).FindAll))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAll", reflect.TypeOf((*MockPlaceRepositoryInterface)(nil).FindAll), ctx)
 }
 
 // Search mocks base method.
-func (m *MockPlaceRepositoryInterface) Search(search string) (model.PlaceList, error) {
+func (m *MockPlaceRepositoryInterface) Search(ctx context.Context, search string) (model.PlaceList, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Search", search)
+	ret := m.ctrl.Call(m, "Search", ctx, search)
 	ret0, _ := ret[0].(model.PlaceList)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Search indicates an expected call of Search.
-func (mr *MockPlaceRepositoryInterfaceMockRecorder) Search(search interface{}) *gomock.Call {
+func (mr *MockPlaceRepositoryInterfaceMockRecorder) Search(ctx, search interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockPlaceRepositoryInterface)(nil).Search), search)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockPlaceRepositoryInterface)(nil).Search), ctx, search)
 }
 
 // Update mocks base method.
-func (m_2 *MockPlaceRepositoryInterface) Update(m *model.Place) error {
+func (m_2 *MockPlaceRepositoryInterface) Update(ctx context.Context, m *model.Place) error {
 	m_2.ctrl.T.Helper()
-	ret := m_2.ctrl.Call(m_2, "Update", m)
+	ret := m_2.ctrl.Call(m_2, "Update", ctx, m)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Update indicates an expected call of Update.
-func (mr *MockPlaceRepositoryInterfaceMockRecorder) Update(m interface{}) *gomock.Call {
+func (mr *MockPlaceRepositoryInterfaceMockRecorder) Update(ctx, m interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockPlaceRepositoryInterface)(nil).Update), m)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockPlaceRepositoryInterface)(nil).Update), ctx, m)
 }
 
 // MockPlaceCategoryRepositoryInterface is a mock of PlaceCategoryRepositoryInterface interface.
@@ -147,33 +148,33 @@ func (m *MockPlaceCategoryRepositoryInterface) EXPECT() *MockPlaceCategoryReposi
 }
 
 // Find mocks base method.
-func (m *MockPlaceCategoryRepositoryInterface) Find(id model.ID) (*model.Category, error) {
+func (m *MockPlaceCategoryRepositoryInterface) Find(ctx context.Context, id model.ID) (*model.Category, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Find", id)
+	ret := m.ctrl.Call(m, "Find", ctx, id)
 	ret0, _ := ret[0].(*model.Category)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Find indicates an expected call of Find.
-func (mr *MockPlaceCategoryRepositoryInterfaceMockRecorder) Find(id interface{}) *gomock.Call {
+func (mr *MockPlaceCategoryRepositoryInterfaceMockRecorder) Find(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Find", reflect.TypeOf((*MockPlaceCategoryRepositoryInterface)(nil).Find), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Find", reflect.TypeOf((*MockPlaceCategoryRepositoryInterface)(nil).Find), ctx, id)
 }
 
 // FindAll mocks base method.
-func (m *MockPlaceCategoryRepositoryInterface) FindAll() (model.CategoryList, error) {
+func (m *MockPlaceCategoryRepositoryInterface) FindAll(ctx context.Context) (model.CategoryList, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindAll")
+	ret := m.ctrl.Call(m, "FindAll", ctx)
 	ret0, _ := ret[0].(model.CategoryList)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // FindAll indicates an expected call of FindAll.
-func (mr *MockPlaceCategoryRepositoryInterfaceMockRecorder) FindAll() *gomock.Call {
+func (mr *MockPlaceCategoryRepositoryInterfaceMockRecorder) FindAll(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAll", reflect.TypeOf((*MockPlaceCategoryRepositoryInterface)(nil).FindAll))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAll", reflect.TypeOf((*MockPlaceCategoryRepositoryInterface)(nil).FindAll), ctx)
 }
 
 // MockPlaceQueueRepositoryInterface is a mock of PlaceQueueRepositoryInterface interface.
@@ -237,9 +238,9 @@ func (m *MockPlaceCacheRepositoryInterface) EXPECT() *MockPlaceCacheRepositoryIn
 }
 
 // Del mocks base method.
-func (m *MockPlaceCacheRepositoryInterface) Del(keys ...string) error {
+func (m *MockPlaceCacheRepositoryInterface) Del(ctx context.Context, keys ...string) error {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{}
+	varargs := []interface{}{ctx}
 	for _, a := range keys {
 		varargs = append(varargs, a)
 	}
@@ -249,36 +250,37 @@ func (m *MockPlaceCacheRepositoryInterface) Del(keys ...string) error {
 }
 
 // Del indicates an expected call of Del.
-func (mr *MockPlaceCacheRepositoryInterfaceMockRecorder) Del(keys ...interface{}) *gomock.Call {
+func (mr *MockPlaceCacheRepositoryInterfaceMockRecorder) Del(ctx interface{}, keys ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Del", reflect.TypeOf((*MockPlaceCacheRepositoryInterface)(nil).Del), keys...)
+	varargs := append([]interface{}{ctx}, keys...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Del", reflect.TypeOf((*MockPlaceCacheRepositoryInterface)(nil).Del), varargs...)
 }
 
 // Get mocks base method.
-func (m *MockPlaceCacheRepositoryInterface) Get(key string) (model.PlaceList, error) {
+func (m *MockPlaceCacheRepositoryInterface) Get(ctx context.Context, key string) (model.PlaceList, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", key)
+	ret := m.ctrl.Call(m, "Get", ctx, key)
 	ret0, _ := ret[0].(model.PlaceList)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockPlaceCacheRepositoryInterfaceMockRecorder) Get(key interface{}) *gomock.Call {
+func (mr *MockPlaceCacheRepositoryInterfaceMockRecorder) Get(ctx, key interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockPlaceCacheRepositoryInterface)(nil).Get), key)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockPlaceCacheRepositoryInterface)(nil).Get), ctx, key)
 }
 
 // Set mocks base method.
-func (m *MockPlaceCacheRepositoryInterface) Set(key string, value model.PlaceList, expiration time.Duration) error {
+func (m *MockPlaceCacheRepositoryInterface) Set(ctx context.Context, key string, value model.PlaceList, expiration time.Duration) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Set", key, value, expiration)
+	ret := m.ctrl.Call(m, "Set", ctx, key, value, expiration)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Set indicates an expected call of Set.
-func (mr *MockPlaceCacheRepositoryInterfaceMockRecorder) Set(key, value, expiration interface{}) *gomock.Call {
+func (mr *MockPlaceCacheRepositoryInterfaceMockRecorder) Set(ctx, key, value, expiration interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockPlaceCacheRepositoryInterface)(nil).Set), key, value, expiration)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockPlaceCacheRepositoryInterface)(nil).Set), ctx, key, value, expiration)
 }

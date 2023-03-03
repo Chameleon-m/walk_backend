@@ -187,7 +187,7 @@ func (app *App) Run() {
 
 	// auth
 	collectionUsers := mongoClient.Database(mongoDefaultDB).Collection("users")
-	userMongoRepository := repository.NewUserMongoRepository(app.ctx, collectionUsers)
+	userMongoRepository := repository.NewUserMongoRepository(collectionUsers)
 	authService := service.NewDefaultAuthService(userMongoRepository)
 	tokenPresenter := presenter.NewTokenPresenter()
 	authHandlers = auth.NewHandler(app.ctx, apiV1, authService, tokenPresenter)
@@ -195,7 +195,7 @@ func (app *App) Run() {
 
 	// category
 	collectionCategories := mongoClient.Database(mongoDefaultDB).Collection("categories")
-	categoryMongoRepository := repository.NewCategoryMongoRepository(app.ctx, collectionCategories)
+	categoryMongoRepository := repository.NewCategoryMongoRepository(collectionCategories)
 	categoryService := service.NewDefaultCategoryService(categoryMongoRepository)
 	categoryPresenter := presenter.NewCategoryPresenter()
 	categoryHandlers = category.NewHandler(app.ctx, apiV1, apiV1auth, categoryService, categoryPresenter)
@@ -203,8 +203,8 @@ func (app *App) Run() {
 
 	// place
 	collectionPlaces := mongoClient.Database(mongoDefaultDB).Collection("places")
-	placeMongoRepository := repository.NewPlaceMongoRepository(app.ctx, collectionPlaces)
-	placeCacheRedisRepository := repository.NewPlaceCacheRedisRepository(app.ctx, redisClient)
+	placeMongoRepository := repository.NewPlaceMongoRepository(collectionPlaces)
+	placeCacheRedisRepository := repository.NewPlaceCacheRedisRepository(redisClient)
 	placeQueueRabbitRepository := repository.NewPlaceQueueRabbitRepository(
 		app.ctx,
 		rabbitMQClient,

@@ -15,21 +15,19 @@ import (
 // PlaceMongoRepository place mongodb repo
 type PlaceMongoRepository struct {
 	collection *mongo.Collection
-	ctx        context.Context
 }
 
 // NewPlaceMongoRepository create new mongo place repository
-func NewPlaceMongoRepository(ctx context.Context, collection *mongo.Collection) *PlaceMongoRepository {
+func NewPlaceMongoRepository(collection *mongo.Collection) *PlaceMongoRepository {
 	return &PlaceMongoRepository{
 		collection: collection,
-		ctx:        ctx,
 	}
 }
 
 // Find place
-func (r *PlaceMongoRepository) Find(id model.ID) (*model.Place, error) {
+func (r *PlaceMongoRepository) Find(ctx context.Context, id model.ID) (*model.Place, error) {
 
-	cur := r.collection.FindOne(r.ctx, bson.M{
+	cur := r.collection.FindOne(ctx, bson.M{
 		"_id": id,
 	})
 
@@ -49,16 +47,16 @@ func (r *PlaceMongoRepository) Find(id model.ID) (*model.Place, error) {
 }
 
 // FindAll places
-func (r *PlaceMongoRepository) FindAll() (model.PlaceList, error) {
+func (r *PlaceMongoRepository) FindAll(ctx context.Context) (model.PlaceList, error) {
 
-	cursor, err := r.collection.Find(r.ctx, bson.M{})
+	cursor, err := r.collection.Find(ctx, bson.M{})
 	if err != nil {
 		return nil, err
 	}
-	defer cursor.Close(r.ctx)
+	defer cursor.Close(ctx)
 
 	mList := make(model.PlaceList, 0)
-	for cursor.Next(r.ctx) {
+	for cursor.Next(ctx) {
 		var place model.Place
 		if err := cursor.Decode(&place); err != nil {
 			return nil, err
@@ -70,7 +68,7 @@ func (r *PlaceMongoRepository) FindAll() (model.PlaceList, error) {
 }
 
 // Create ...
-func (r *PlaceMongoRepository) Create(place *model.Place) (model.ID, error) {
+func (r *PlaceMongoRepository) Create(ctx context.Context, place *model.Place) (model.ID, error) {
 
 	if place.ID.IsNil() {
 		id, err := model.NewID()
@@ -81,17 +79,17 @@ func (r *PlaceMongoRepository) Create(place *model.Place) (model.ID, error) {
 	}
 
 	place.CreatedAt = time.Now()
-	_, err := r.collection.InsertOne(r.ctx, place)
+	_, err := r.collection.InsertOne(ctx, place)
 
 	return place.ID, err
 }
 
 // Update ...
-func (r *PlaceMongoRepository) Update(place *model.Place) error {
+func (r *PlaceMongoRepository) Update(ctx context.Context, place *model.Place) error {
 
 	place.UpdatedAt = time.Now()
 
-	updateResult, err := r.collection.UpdateOne(r.ctx, bson.M{
+	updateResult, err := r.collection.UpdateOne(ctx, bson.M{
 		"_id": place.ID,
 	}, bson.D{{Key: "$set", Value: bson.D{
 		{Key: "name", Value: place.Name},
@@ -111,8 +109,8 @@ func (r *PlaceMongoRepository) Update(place *model.Place) error {
 }
 
 // Delete ...
-func (r *PlaceMongoRepository) Delete(id model.ID) error {
-	deleteResult, err := r.collection.DeleteOne(r.ctx, bson.M{
+func (r *PlaceMongoRepository) Delete(ctx context.Context, id model.ID) error {
+	deleteResult, err := r.collection.DeleteOne(ctx, bson.M{
 		"_id": id,
 	})
 
@@ -124,18 +122,18 @@ func (r *PlaceMongoRepository) Delete(id model.ID) error {
 }
 
 // Search ...
-func (r *PlaceMongoRepository) Search(search string) (model.PlaceList, error) {
+func (r *PlaceMongoRepository) Search(ctx context.Context, search string) (model.PlaceList, error) {
 
 	sort := options.Find()
 	sort.SetSort(bson.D{{Key: "score", Value: bson.D{{Key: "$meta", Value: "textScore"}}}})
-	cursor, err := r.collection.Find(r.ctx, bson.D{{Key: "$text", Value: bson.D{{Key: "$search", Value: search}}}}, sort)
+	cursor, err := r.collection.Find(ctx, bson.D{{Key: "$text", Value: bson.D{{Key: "$search", Value: search}}}}, sort)
 	if err != nil {
 		return nil, err
 	}
-	defer cursor.Close(r.ctx)
+	defer cursor.Close(ctx)
 
 	places := make(model.PlaceList, 0)
-	for cursor.Next(r.ctx) {
+	for cursor.Next(ctx) {
 		var place model.Place
 		if err := cursor.Decode(&place); err != nil {
 			return nil, err

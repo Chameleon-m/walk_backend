@@ -15,11 +15,11 @@ import (
 
 // ServiceInterface ...
 type ServiceInterface interface {
-	ListCategories() (model.CategoryList, error)
-	Create(dto *dto.Category) (model.ID, error)
-	Update(dto *dto.Category) error
-	Delete(id model.ID) error
-	Find(id model.ID) (*model.Category, error)
+	ListCategories(ctx context.Context) (model.CategoryList, error)
+	Create(ctx context.Context, dto *dto.Category) (model.ID, error)
+	Update(ctx context.Context, dto *dto.Category) error
+	Delete(ctx context.Context, id model.ID) error
+	Find(ctx context.Context, id model.ID) (*model.Category, error)
 }
 
 type PresenterInterface interface {
@@ -66,7 +66,7 @@ func NewHandler(
 //	  description: Successful operation
 func (handler *CategoriesHandler) ListCategoriesHandler(c *gin.Context) {
 
-	categoryList, err := handler.service.ListCategories()
+	categoryList, err := handler.service.ListCategories(handler.ctx)
 	if err != nil {
 		_ = c.Error(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -99,7 +99,7 @@ func (handler *CategoriesHandler) NewCategoryHandler(c *gin.Context) {
 		return
 	}
 
-	id, err := handler.service.Create(dto)
+	id, err := handler.service.Create(handler.ctx, dto)
 	if err != nil {
 		_ = c.Error(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -141,7 +141,7 @@ func (handler *CategoriesHandler) UpdateCategryHandler(c *gin.Context) {
 		return
 	}
 
-	if err := handler.service.Update(dto); err != nil {
+	if err := handler.service.Update(handler.ctx, dto); err != nil {
 		_ = c.Error(err)
 		if errors.Is(err, model.ErrModelNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
@@ -187,7 +187,7 @@ func (handler *CategoriesHandler) DeleteCategoryHandler(c *gin.Context) {
 		return
 	}
 
-	if err := handler.service.Delete(categoryID); err != nil {
+	if err := handler.service.Delete(handler.ctx, categoryID); err != nil {
 		_ = c.Error(err)
 		if errors.Is(err, model.ErrModelNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
@@ -231,7 +231,7 @@ func (handler *CategoriesHandler) GetOneCategoryHandler(c *gin.Context) {
 		return
 	}
 
-	category, err := handler.service.Find(categoryID)
+	category, err := handler.service.Find(handler.ctx, categoryID)
 	if err != nil {
 		_ = c.Error(err)
 		if errors.Is(err, model.ErrModelNotFound) {

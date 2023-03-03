@@ -13,21 +13,19 @@ import (
 // PlaceCacheRedisRepository place mongodb repo
 type PlaceCacheRedisRepository struct {
 	сlient *redis.Client
-	ctx    context.Context
 }
 
 // NewPlaceCacheRedisRepository create new redis place cache repository
-func NewPlaceCacheRedisRepository(ctx context.Context, сlient *redis.Client) *PlaceCacheRedisRepository {
+func NewPlaceCacheRedisRepository(сlient *redis.Client) *PlaceCacheRedisRepository {
 	return &PlaceCacheRedisRepository{
 		сlient: сlient,
-		ctx:    ctx,
 	}
 }
 
 // Get Get cahce places
-func (r *PlaceCacheRedisRepository) Get(key string) (model.PlaceList, error) {
+func (r *PlaceCacheRedisRepository) Get(ctx context.Context, key string) (model.PlaceList, error) {
 
-	result, err := r.сlient.Get(r.ctx, key).Result()
+	result, err := r.сlient.Get(ctx, key).Result()
 	if err == redis.Nil {
 		return nil, nil
 	} else if err != nil {
@@ -42,17 +40,17 @@ func (r *PlaceCacheRedisRepository) Get(key string) (model.PlaceList, error) {
 }
 
 // Set Set cahce places
-func (r *PlaceCacheRedisRepository) Set(key string, places model.PlaceList, expiration time.Duration) error {
+func (r *PlaceCacheRedisRepository) Set(ctx context.Context, key string, places model.PlaceList, expiration time.Duration) error {
 
 	data, err := json.Marshal(places)
 	if err != nil {
 		return err
 	}
 
-	return r.сlient.Set(r.ctx, key, string(data), expiration).Err()
+	return r.сlient.Set(ctx, key, string(data), expiration).Err()
 }
 
 // Del Delete cache places
-func (r *PlaceCacheRedisRepository) Del(keys ...string) error {
-	return r.сlient.Del(r.ctx, keys...).Err()
+func (r *PlaceCacheRedisRepository) Del(ctx context.Context, keys ...string) error {
+	return r.сlient.Del(ctx, keys...).Err()
 }

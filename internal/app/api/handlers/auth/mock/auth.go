@@ -11,6 +11,7 @@ import (
 	model "walk_backend/internal/app/model"
 
 	gomock "github.com/golang/mock/gomock"
+	context "golang.org/x/net/context"
 )
 
 // MockServiceInterface is a mock of ServiceInterface interface.
@@ -52,33 +53,33 @@ func (mr *MockServiceInterfaceMockRecorder) GenerateToken() *gomock.Call {
 }
 
 // Login mocks base method.
-func (m *MockServiceInterface) Login(dto *dto.AuthLogin) (*model.User, error) {
+func (m *MockServiceInterface) Login(ctx context.Context, dto *dto.AuthLogin) (*model.User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Login", dto)
+	ret := m.ctrl.Call(m, "Login", ctx, dto)
 	ret0, _ := ret[0].(*model.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Login indicates an expected call of Login.
-func (mr *MockServiceInterfaceMockRecorder) Login(dto interface{}) *gomock.Call {
+func (mr *MockServiceInterfaceMockRecorder) Login(ctx, dto interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Login", reflect.TypeOf((*MockServiceInterface)(nil).Login), dto)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Login", reflect.TypeOf((*MockServiceInterface)(nil).Login), ctx, dto)
 }
 
 // Registration mocks base method.
-func (m *MockServiceInterface) Registration(dto *dto.AuthLogin) (*model.User, error) {
+func (m *MockServiceInterface) Registration(ctx context.Context, dto *dto.AuthLogin) (*model.User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Registration", dto)
+	ret := m.ctrl.Call(m, "Registration", ctx, dto)
 	ret0, _ := ret[0].(*model.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Registration indicates an expected call of Registration.
-func (mr *MockServiceInterfaceMockRecorder) Registration(dto interface{}) *gomock.Call {
+func (mr *MockServiceInterfaceMockRecorder) Registration(ctx, dto interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Registration", reflect.TypeOf((*MockServiceInterface)(nil).Registration), dto)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Registration", reflect.TypeOf((*MockServiceInterface)(nil).Registration), ctx, dto)
 }
 
 // MockTokenPresenterInterface is a mock of TokenPresenterInterface interface.

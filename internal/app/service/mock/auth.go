@@ -5,6 +5,7 @@
 package mock
 
 import (
+	context "context"
 	reflect "reflect"
 	model "walk_backend/internal/app/model"
 
@@ -35,31 +36,31 @@ func (m *MockUserRepositoryInterface) EXPECT() *MockUserRepositoryInterfaceMockR
 }
 
 // Create mocks base method.
-func (m_2 *MockUserRepositoryInterface) Create(m *model.User) (model.ID, error) {
+func (m_2 *MockUserRepositoryInterface) Create(ctx context.Context, m *model.User) (model.ID, error) {
 	m_2.ctrl.T.Helper()
-	ret := m_2.ctrl.Call(m_2, "Create", m)
+	ret := m_2.ctrl.Call(m_2, "Create", ctx, m)
 	ret0, _ := ret[0].(model.ID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Create indicates an expected call of Create.
-func (mr *MockUserRepositoryInterfaceMockRecorder) Create(m interface{}) *gomock.Call {
+func (mr *MockUserRepositoryInterfaceMockRecorder) Create(ctx, m interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockUserRepositoryInterface)(nil).Create), m)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockUserRepositoryInterface)(nil).Create), ctx, m)
 }
 
 // FindByUsername mocks base method.
-func (m *MockUserRepositoryInterface) FindByUsername(username string) (*model.User, error) {
+func (m *MockUserRepositoryInterface) FindByUsername(ctx context.Context, username string) (*model.User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindByUsername", username)
+	ret := m.ctrl.Call(m, "FindByUsername", ctx, username)
 	ret0, _ := ret[0].(*model.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // FindByUsername indicates an expected call of FindByUsername.
-func (mr *MockUserRepositoryInterfaceMockRecorder) FindByUsername(username interface{}) *gomock.Call {
+func (mr *MockUserRepositoryInterfaceMockRecorder) FindByUsername(ctx, username interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByUsername", reflect.TypeOf((*MockUserRepositoryInterface)(nil).FindByUsername), username)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByUsername", reflect.TypeOf((*MockUserRepositoryInterface)(nil).FindByUsername), ctx, username)
 }

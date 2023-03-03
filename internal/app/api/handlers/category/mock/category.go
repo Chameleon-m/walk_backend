@@ -11,6 +11,7 @@ import (
 	model "walk_backend/internal/app/model"
 
 	gomock "github.com/golang/mock/gomock"
+	context "golang.org/x/net/context"
 )
 
 // MockServiceInterface is a mock of ServiceInterface interface.
@@ -37,76 +38,76 @@ func (m *MockServiceInterface) EXPECT() *MockServiceInterfaceMockRecorder {
 }
 
 // Create mocks base method.
-func (m *MockServiceInterface) Create(dto *dto.Category) (model.ID, error) {
+func (m *MockServiceInterface) Create(ctx context.Context, dto *dto.Category) (model.ID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", dto)
+	ret := m.ctrl.Call(m, "Create", ctx, dto)
 	ret0, _ := ret[0].(model.ID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Create indicates an expected call of Create.
-func (mr *MockServiceInterfaceMockRecorder) Create(dto interface{}) *gomock.Call {
+func (mr *MockServiceInterfaceMockRecorder) Create(ctx, dto interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockServiceInterface)(nil).Create), dto)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockServiceInterface)(nil).Create), ctx, dto)
 }
 
 // Delete mocks base method.
-func (m *MockServiceInterface) Delete(id model.ID) error {
+func (m *MockServiceInterface) Delete(ctx context.Context, id model.ID) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", id)
+	ret := m.ctrl.Call(m, "Delete", ctx, id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockServiceInterfaceMockRecorder) Delete(id interface{}) *gomock.Call {
+func (mr *MockServiceInterfaceMockRecorder) Delete(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockServiceInterface)(nil).Delete), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockServiceInterface)(nil).Delete), ctx, id)
 }
 
 // Find mocks base method.
-func (m *MockServiceInterface) Find(id model.ID) (*model.Category, error) {
+func (m *MockServiceInterface) Find(ctx context.Context, id model.ID) (*model.Category, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Find", id)
+	ret := m.ctrl.Call(m, "Find", ctx, id)
 	ret0, _ := ret[0].(*model.Category)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Find indicates an expected call of Find.
-func (mr *MockServiceInterfaceMockRecorder) Find(id interface{}) *gomock.Call {
+func (mr *MockServiceInterfaceMockRecorder) Find(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Find", reflect.TypeOf((*MockServiceInterface)(nil).Find), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Find", reflect.TypeOf((*MockServiceInterface)(nil).Find), ctx, id)
 }
 
 // ListCategories mocks base method.
-func (m *MockServiceInterface) ListCategories() (model.CategoryList, error) {
+func (m *MockServiceInterface) ListCategories(ctx context.Context) (model.CategoryList, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListCategories")
+	ret := m.ctrl.Call(m, "ListCategories", ctx)
 	ret0, _ := ret[0].(model.CategoryList)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ListCategories indicates an expected call of ListCategories.
-func (mr *MockServiceInterfaceMockRecorder) ListCategories() *gomock.Call {
+func (mr *MockServiceInterfaceMockRecorder) ListCategories(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListCategories", reflect.TypeOf((*MockServiceInterface)(nil).ListCategories))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListCategories", reflect.TypeOf((*MockServiceInterface)(nil).ListCategories), ctx)
 }
 
 // Update mocks base method.
-func (m *MockServiceInterface) Update(dto *dto.Category) error {
+func (m *MockServiceInterface) Update(ctx context.Context, dto *dto.Category) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Update", dto)
+	ret := m.ctrl.Call(m, "Update", ctx, dto)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Update indicates an expected call of Update.
-func (mr *MockServiceInterfaceMockRecorder) Update(dto interface{}) *gomock.Call {
+func (mr *MockServiceInterfaceMockRecorder) Update(ctx, dto interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockServiceInterface)(nil).Update), dto)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockServiceInterface)(nil).Update), ctx, dto)
 }
 
 // MockPresenterInterface is a mock of PresenterInterface interface.
