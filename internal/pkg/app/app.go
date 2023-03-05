@@ -17,6 +17,7 @@ import (
 	"walk_backend/internal/app/service"
 	"walk_backend/internal/pkg/cache"
 	"walk_backend/internal/pkg/components"
+	"walk_backend/internal/pkg/logger"
 
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -75,7 +76,8 @@ func (app *App) Run() {
 	ctxSignal, ctxSignalStop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer ctxSignalStop()
 
-	app.ctx, app.ctxCancel = context.WithCancel(context.Background())
+	// Creater app context with logger
+	app.ctx, app.ctxCancel = context.WithCancel(logger.ContextWithLogger(context.Background(), &log))
 	defer app.ctxCancel()
 
 	g, gCtx := errgroup.WithContext(app.ctx)
