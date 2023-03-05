@@ -7,6 +7,12 @@ app:
     level: 0
     utc: true
 
+  request_log:
+    enable: true
+    skip_path: 
+      - '/version'
+      - '/prometheus'
+
   api:
     schema: 'http'
     host: 'api'
@@ -20,8 +26,8 @@ app:
   queue:
     reindex:
       place:
-        routing_key: place_routing_key
-        queue: place_reindex_queue
+        routing_key: 'place_routing_key'
+        queue: 'place_reindex_queue'
 
   redis_component:
     host: 'redis'

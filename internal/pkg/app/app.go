@@ -18,7 +18,6 @@ import (
 	"walk_backend/internal/pkg/cache"
 	"walk_backend/internal/pkg/components"
 
-	"github.com/gin-contrib/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog"
@@ -147,18 +146,11 @@ func (app *App) Run() {
 
 	// common middleware
 
-	// zerolog middleware
-	app.engine.Use(logger.SetLogger(
-		logger.WithSkipPath([]string{"/version", "/prometheus"}),
-		logger.WithUTC(true),
-		logger.WithWriter(os.Stdout),
-		logger.WithDefaultLevel(zerolog.InfoLevel),
-		logger.WithClientErrorLevel(zerolog.WarnLevel),
-		logger.WithServerErrorLevel(zerolog.ErrorLevel),
-		logger.WithLogger(func(c *gin.Context, l zerolog.Logger) zerolog.Logger {
-			return app.logger.With().Str("id", c.GetHeader("X-Request-ID")).Logger()
-		}),
-	))
+	// request logger middleware
+	if app.cfg.RequestLog.Enable {
+		log.Printf("Request logger skip path: %v", app.cfg.RequestLog.SkipPath)
+		app.engine.Use(middleware.RequestLogger(&app.logger, app.cfg.RequestLog.SkipPath))
+	}
 
 	// Prometheus middleware
 	app.engine.Use(middleware.Prometheus())
@@ -177,9 +169,9 @@ func (app *App) Run() {
 
 	// routes for version 1
 	apiV1 := app.engine.Group("/api/v1")
-	apiV1auth := apiV1.Group("")
 	apiV1.Use(sessionMidlleware)
-	apiV1auth.Use(sessionMidlleware)
+
+	apiV1auth := apiV1.Group("")
 	apiV1auth.Use(authMiddleware)
 
 	// Build handlers

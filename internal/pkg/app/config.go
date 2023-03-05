@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"walk_backend/internal/pkg/components"
+	"walk_backend/internal/pkg/util"
 )
 
 type Config struct {
@@ -13,6 +14,10 @@ type Config struct {
 		Level int  `yaml:"log_level" env:"LOG_LEVEL" env-default:"1"    env-description:"Log level"`
 		UTC   bool `yaml:"utc"       env:"LOG_UTC"   env-default:"true" env-description:"Use UTC for log timestamp"`
 	} `yaml:"log"`
+	RequestLog struct {
+		Enable   bool                 `yaml:"enable"    env:"REQUEST_LOG_ENABLE"    env-default:"true" env-description:"Request log on/off"`
+		SkipPath util.StringSliceFlag `yaml:"skip_path" env:"REQUEST_LOG_SKIP_PATH" env-default:""     env-description:"Request log skip path" env-separator:","`
+	} `yaml:"request_log"`
 	Api struct {
 		Schema string `yaml:"schema" env:"API_SCHEMA" env-default:"http" env-description:"API schema"`
 		Host   string `yaml:"host"   env:"API_HOST"   env-default:""     env-description:"API host"`
@@ -39,9 +44,12 @@ type Config struct {
 }
 
 func (cfg *Config) RegisterFlags(fs *flag.FlagSet) {
+
 	fs.StringVar(&cfg.GinMode, "gin-mode", cfg.GinMode, "Gin mode")
 	fs.IntVar(&cfg.Log.Level, "log-level", cfg.Log.Level, "Log level")
 	fs.BoolVar(&cfg.Log.UTC, "log-utc", cfg.Log.UTC, "Use UTC for log timestamp")
+	fs.BoolVar(&cfg.RequestLog.Enable, "request-log", cfg.RequestLog.Enable, "Request log on/off")
+	fs.Var(&cfg.RequestLog.SkipPath, "request-log-skip", "Request log skip path, use , for list")
 	fs.StringVar(&cfg.Api.Schema, "api-schema", cfg.Api.Schema, "API schema")
 	fs.StringVar(&cfg.Api.Host, "api-host", cfg.Api.Host, "API host")
 	fs.StringVar(&cfg.Api.Port, "api-port", cfg.Api.Port, "API port")

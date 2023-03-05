@@ -3,6 +3,7 @@ package util
 import (
 	"fmt"
 	"io"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -14,5 +15,16 @@ func PrintConfig(w io.Writer, config interface{}) error {
 		return err
 	}
 	fmt.Fprintf(w, "---\n# Config\n%s\n\n", string(lc))
+	return nil
+}
+
+type StringSliceFlag []string
+
+func (f *StringSliceFlag) String() string {
+	return strings.Join(*f, ",")
+}
+
+func (f *StringSliceFlag) Set(value string) error {
+	*f = strings.Split(value, ",")
 	return nil
 }
