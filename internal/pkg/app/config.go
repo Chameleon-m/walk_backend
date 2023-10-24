@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"walk_backend/internal/pkg/components"
+	"walk_backend/internal/pkg/components/rabbitmq"
 	"walk_backend/internal/pkg/util"
 )
 
@@ -38,7 +39,7 @@ type Config struct {
 		} `yaml:"reindex"`
 	} `yaml:"queue"`
 	Redis    components.RedisConfig             `yaml:"redis_component"`
-	RabbitMQ components.RabbitMQConfig          `yaml:"rabbit_mq_component"`
+	RabbitMQ rabbitmq.Config                    `yaml:"rabbit_mq_component"`
 	MongoDB  components.MongoDBConfig           `yaml:"mongo_db_component"`
 	Session  components.SessionGinMongoDBConfig `yaml:"session_component"`
 }

@@ -17,6 +17,7 @@ import (
 	"walk_backend/internal/app/service"
 	"walk_backend/internal/pkg/cache"
 	"walk_backend/internal/pkg/components"
+	rabbitmqComponent "walk_backend/internal/pkg/components/rabbitmq"
 	"walk_backend/internal/pkg/logger"
 
 	"github.com/gin-gonic/gin"
@@ -101,7 +102,10 @@ func (app *App) Run() {
 	}()
 
 	// RabbitMQ
-	rabbitMqPublisherComponent := components.NewRabbitMQ("rabbitMQ", app.logger, app.cfg.RabbitMQ.URI)
+	rabbitMqPublisherComponent, err := rabbitmqComponent.New("rabbitMQ", app.logger, app.cfg.RabbitMQ.URI)
+	if err != nil {
+		log.Panic().Err(err).Caller(0).Send()
+	}
 	g.Go(func() error { return rabbitMqPublisherComponent.Start(gCtx) })
 	defer func() {
 		if err := rabbitMqPublisherComponent.Stop(context.TODO()); err != nil {
