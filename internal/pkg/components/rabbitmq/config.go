@@ -6,7 +6,7 @@ import (
 )
 
 type Config struct {
-	URI string `yaml:"uri" env:"RABBITMQ_URI" env-description:"RabbitMQ connection URI"`
+	URI string `yaml:"uri" env:"RABBITMQ_URI" env-default:"amqp://guest:guest@localhost:5672/" env-description:"RabbitMQ connection URI"`
 }
 
 func (cfg *Config) RegisterFlags(fs *flag.FlagSet) {

@@ -102,13 +102,13 @@ func (app *App) Run() {
 	}()
 
 	// RabbitMQ
-	rabbitMqPublisherComponent, err := rabbitmqComponent.New("rabbitMQ", app.logger, app.cfg.RabbitMQ.URI)
+	rabbitMqPublisherComponentInit, err := rabbitmqComponent.New("rabbitMQ", app.logger, app.cfg.RabbitMQ)
 	if err != nil {
 		log.Panic().Err(err).Caller(0).Send()
 	}
-	g.Go(func() error { return rabbitMqPublisherComponent.Start(gCtx) })
+	g.Go(func() error { return rabbitMqPublisherComponentInit.Start(gCtx) })
 	defer func() {
-		if err := rabbitMqPublisherComponent.Stop(context.TODO()); err != nil {
+		if err := rabbitMqPublisherComponentInit.Stop(context.TODO()); err != nil {
 			log.Error().Err(err).Caller(0).Send()
 		}
 	}()
@@ -143,7 +143,7 @@ func (app *App) Run() {
 	}
 
 	mongoClient := mongoDBComponent.GetClient()
-	rabbitMQClient := rabbitMqPublisherComponent.GetClient()
+	rabbitMQClient := rabbitMqPublisherComponentInit.GetClient()
 	redisClient := redisComponent.GetClient()
 
 	// Engine

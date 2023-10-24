@@ -96,7 +96,7 @@ func WithDial(dial time.Duration) Option {
 	}
 }
 
-func New(name string, log zerolog.Logger, uri string, opts ...Option) (*component, error) {
+func New(name string, log zerolog.Logger, config Config, opts ...Option) (*component, error) {
 	var options options
 	for _, opt := range opts {
 		if err := opt(&options); err != nil {
@@ -149,7 +149,7 @@ func New(name string, log zerolog.Logger, uri string, opts ...Option) (*componen
 	}
 
 	return &component{
-		rabbitMQURL: uri,
+		rabbitMQURL: config.URI,
 		vhost:       vhost,
 		channelMax:  channelMax,
 		frameSize:   frameSize,
