@@ -43,7 +43,7 @@ func main() {
 	}
 
 	if cfg.IsEnvDescription() {
-		desc, err := cfg.GetEnvDescripption()
+		desc, err := cfg.GetEnvDescription()
 		if err != nil {
 			log.Fatalf("Config env description error: %s", err.Error())
 		}

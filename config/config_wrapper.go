@@ -85,8 +85,8 @@ func (cfg *ConfigWrapper) Validate() error {
 	return nil
 }
 
-// GetEnvDescripption ...
-func (cfg *ConfigWrapper) GetEnvDescripption() (string, error) {
+// GetEnvDescription ...
+func (cfg *ConfigWrapper) GetEnvDescription() (string, error) {
 	return cleanenv.GetDescription(cfg, nil)
 }
 

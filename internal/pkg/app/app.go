@@ -77,7 +77,7 @@ func (app *App) Run() {
 	ctxSignal, ctxSignalStop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer ctxSignalStop()
 
-	// Creater app context with logger
+	// Create app context with logger
 	app.ctx, app.ctxCancel = context.WithCancel(logger.ContextWithLogger(context.Background(), &log))
 	defer app.ctxCancel()
 
@@ -168,14 +168,14 @@ func (app *App) Run() {
 	app.engine.Use(middleware.RequestAbsURL())
 
 	// session middleware
-	sessionMidlleware := middleware.Session(sessionName, sessionComponent.GetClient())
+	sessionMiddleware := middleware.Session(sessionName, sessionComponent.GetClient())
 
 	// auth middleware
 	authMiddleware := middleware.Auth()
 
 	// routes for version 1
 	apiV1 := app.engine.Group("/api/v1")
-	apiV1.Use(sessionMidlleware)
+	apiV1.Use(sessionMiddleware)
 
 	apiV1auth := apiV1.Group("")
 	apiV1auth.Use(authMiddleware)
@@ -249,9 +249,7 @@ func (app *App) Run() {
 	// Initializing the server in a goroutine so that it won't block the graceful shutdown handling below
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			if err != nil {
-				log.Panic().Err(err).Send()
-			}
+			log.Panic().Err(err).Send()
 		}
 	}()
 

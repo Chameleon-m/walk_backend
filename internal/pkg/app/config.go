@@ -31,7 +31,7 @@ type Config struct {
 	} `yaml:"site"`
 	Queue struct {
 		ReIndex struct {
-			Exchange string `yaml:"exchang" env:"RABBITMQ_EXCHANGE_REINDEX" env-default:"reindex_exchange" env-description:"Exchange for reindex"`
+			Exchange string `yaml:"exchange" env:"RABBITMQ_EXCHANGE_REINDEX" env-default:"reindex_exchange" env-description:"Exchange for reindex"`
 			Place    struct {
 				RoutingKey        string `yaml:"routing_key"   env:"RABBITMQ_ROUTING_PLACE_KEY"   env-default:"place_routing_key"   env-description:"Routing key for place"`
 				QueuePlaceReindex string `yaml:"queue"         env:"RABBITMQ_QUEUE_PLACE_REINDEX" env-default:"place_reindex_queue" env-description:"Queue name for place reindex"`
