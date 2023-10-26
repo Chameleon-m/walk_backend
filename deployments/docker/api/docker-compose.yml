@@ -30,10 +30,7 @@ services:
       SITE_SCHEMA: ${SITE_SCHEMA}
       SITE_HOST: ${SITE_HOST}
       SITE_PORT: ${SITE_PORT}
-      REDIS_HOST: ${REDIS_HOST}
-      REDIS_PORT: ${REDIS_PORT}
-      REDIS_USERNAME: ${REDIS_USERNAME}
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_URL: ${REDIS_URL}
     networks:
       - netApplication
       - netNginx

@@ -18,6 +18,7 @@ import (
 	"walk_backend/internal/pkg/cache"
 	"walk_backend/internal/pkg/components"
 	rabbitmqComponent "walk_backend/internal/pkg/components/rabbitmq"
+	redisComponent "walk_backend/internal/pkg/components/redis"
 	"walk_backend/internal/pkg/logger"
 
 	"github.com/gin-gonic/gin"
@@ -86,17 +87,13 @@ func (app *App) Run() {
 	// TODO create logger interface and inject logger
 
 	// Redis
-	redisComponent := components.NewRedis(
-		"redis",
-		app.logger,
-		app.cfg.Redis.Host,
-		app.cfg.Redis.Port,
-		app.cfg.Redis.Username,
-		app.cfg.Redis.Password,
-	)
-	g.Go(func() error { return redisComponent.Start(gCtx) })
+	redisComponentInit, err := redisComponent.New("redis", app.logger, app.cfg.Redis)
+	if err != nil {
+		log.Panic().Err(err).Caller(0).Send()
+	}
+	g.Go(func() error { return redisComponentInit.Start(gCtx) })
 	defer func() {
-		if err := redisComponent.Stop(context.TODO()); err != nil {
+		if err := redisComponentInit.Stop(context.TODO()); err != nil {
 			log.Error().Err(err).Caller(0).Send()
 		}
 	}()
@@ -144,7 +141,7 @@ func (app *App) Run() {
 
 	mongoClient := mongoDBComponent.GetClient()
 	rabbitMQClient := rabbitMqPublisherComponentInit.GetClient()
-	redisClient := redisComponent.GetClient()
+	redisClient := redisComponentInit.GetClient()
 
 	// Engine
 	app.engine = gin.New()
