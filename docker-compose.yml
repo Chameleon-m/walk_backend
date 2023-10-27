@@ -48,7 +48,7 @@ services:
   #   image: 'migrate/migrate:v4.15.2'
   #   volumes:
   #     - ./migrations:/migrations
-  #   command: -source file://migrations -database "${MONGO_URI}" -verbose up
+  #   command: -source file://migrations -database "${MONGO_URL}" -verbose up
   #   depends_on:
   #     mongo1:
   #       condition: service_healthy

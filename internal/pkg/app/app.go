@@ -16,7 +16,10 @@ import (
 	"walk_backend/internal/app/repository"
 	"walk_backend/internal/app/service"
 	"walk_backend/internal/pkg/cache"
-	"walk_backend/internal/pkg/components"
+	mongoComponent "walk_backend/internal/pkg/components/mongo"
+	rabbitmqComponent "walk_backend/internal/pkg/components/rabbitmq"
+	redisComponent "walk_backend/internal/pkg/components/redis"
+	sessionComponent "walk_backend/internal/pkg/components/session"
 	"walk_backend/internal/pkg/logger"
 
 	"github.com/gin-gonic/gin"
@@ -76,7 +79,7 @@ func (app *App) Run() {
 	ctxSignal, ctxSignalStop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer ctxSignalStop()
 
-	// Creater app context with logger
+	// Create app context with logger
 	app.ctx, app.ctxCancel = context.WithCancel(logger.ContextWithLogger(context.Background(), &log))
 	defer app.ctxCancel()
 
@@ -85,62 +88,52 @@ func (app *App) Run() {
 	// TODO create logger interface and inject logger
 
 	// Redis
-	redisComponent := components.NewRedis(
-		"redis",
-		app.logger,
-		app.cfg.Redis.Host,
-		app.cfg.Redis.Port,
-		app.cfg.Redis.Username,
-		app.cfg.Redis.Password,
-	)
-	g.Go(func() error { return redisComponent.Start(gCtx) })
+	redisComponentInit, err := redisComponent.New("redis", app.logger, app.cfg.Redis)
+	if err != nil {
+		log.Panic().Err(err).Caller(0).Send()
+	}
+	g.Go(func() error { return redisComponentInit.Start(gCtx) })
 	defer func() {
-		if err := redisComponent.Stop(context.TODO()); err != nil {
+		if err := redisComponentInit.Stop(context.TODO()); err != nil {
 			log.Error().Err(err).Caller(0).Send()
 		}
 	}()
 
 	// RabbitMQ
-	rabbitMqPublisherComponent := components.NewRabbitMQ("rabbitMQ", app.logger, app.cfg.RabbitMQ.URI)
-	g.Go(func() error { return rabbitMqPublisherComponent.Start(gCtx) })
+	rabbitMqPublisherComponentInit, err := rabbitmqComponent.New("rabbitMQ", app.logger, app.cfg.RabbitMQ)
+	if err != nil {
+		log.Panic().Err(err).Caller(0).Send()
+	}
+	g.Go(func() error { return rabbitMqPublisherComponentInit.Start(gCtx) })
 	defer func() {
-		if err := rabbitMqPublisherComponent.Stop(context.TODO()); err != nil {
+		if err := rabbitMqPublisherComponentInit.Stop(context.TODO()); err != nil {
 			log.Error().Err(err).Caller(0).Send()
 		}
 	}()
 
 	// DB mongo
 	mongoDefaultDB := app.cfg.MongoDB.InitDBName
-	mongoDBComponent := components.NewMongoDB("mongoDB", app.logger, app.cfg.MongoDB.URI)
-	g.Go(func() error { return mongoDBComponent.Start(gCtx) })
+	mongoComponentInit := mongoComponent.New("mongoDB", app.logger, app.cfg.MongoDB)
+	g.Go(func() error { return mongoComponentInit.Start(gCtx) })
 	defer func() {
-		if err := mongoDBComponent.Stop(context.TODO()); err != nil {
+		if err := mongoComponentInit.Stop(context.TODO()); err != nil {
 			log.Error().Err(err).Caller(0).Send()
 		}
 	}()
 
-	<-mongoDBComponent.Ready()
+	<-mongoComponentInit.Ready()
 	// Session // MongoDB store
 	sessionName := app.cfg.Session.Name
-	sessionComponent := components.NewSessionGinMongoDB(
-		"session",
-		app.logger,
-		app.cfg.Session.Secret,
-		app.cfg.Session.Path,
-		app.cfg.Session.Domain,
-		app.cfg.Session.MaxAge,
-		app.cfg.Session.DBName,
-		mongoDBComponent.GetClient(),
-	)
-	g.Go(func() error { return sessionComponent.Start(gCtx) })
+	sessionComponentInit := sessionComponent.NewGinMongoDB("session", app.logger, app.cfg.Session, mongoComponentInit.GetClient())
+	g.Go(func() error { return sessionComponentInit.Start(gCtx) })
 
 	if err := g.Wait(); err != nil {
 		log.Fatal().Err(err).Caller(0).Send()
 	}
 
-	mongoClient := mongoDBComponent.GetClient()
-	rabbitMQClient := rabbitMqPublisherComponent.GetClient()
-	redisClient := redisComponent.GetClient()
+	mongoClient := mongoComponentInit.GetClient()
+	rabbitMQClient := rabbitMqPublisherComponentInit.GetClient()
+	redisClient := redisComponentInit.GetClient()
 
 	// Engine
 	app.engine = gin.New()
@@ -164,14 +157,14 @@ func (app *App) Run() {
 	app.engine.Use(middleware.RequestAbsURL())
 
 	// session middleware
-	sessionMidlleware := middleware.Session(sessionName, sessionComponent.GetClient())
+	sessionMiddleware := middleware.Session(sessionName, sessionComponentInit.GetClient())
 
 	// auth middleware
 	authMiddleware := middleware.Auth()
 
 	// routes for version 1
 	apiV1 := app.engine.Group("/api/v1")
-	apiV1.Use(sessionMidlleware)
+	apiV1.Use(sessionMiddleware)
 
 	apiV1auth := apiV1.Group("")
 	apiV1auth.Use(authMiddleware)
@@ -245,9 +238,7 @@ func (app *App) Run() {
 	// Initializing the server in a goroutine so that it won't block the graceful shutdown handling below
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			if err != nil {
-				log.Panic().Err(err).Send()
-			}
+			log.Panic().Err(err).Send()
 		}
 	}()
 

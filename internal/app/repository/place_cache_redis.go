@@ -6,26 +6,26 @@ import (
 
 	"walk_backend/internal/app/model"
 
-	"github.com/go-redis/redis/v9"
+	"github.com/redis/go-redis/v9"
 	"golang.org/x/net/context"
 )
 
 // PlaceCacheRedisRepository place mongodb repo
 type PlaceCacheRedisRepository struct {
-	сlient *redis.Client
+	client *redis.Client
 }
 
 // NewPlaceCacheRedisRepository create new redis place cache repository
-func NewPlaceCacheRedisRepository(сlient *redis.Client) *PlaceCacheRedisRepository {
+func NewPlaceCacheRedisRepository(client *redis.Client) *PlaceCacheRedisRepository {
 	return &PlaceCacheRedisRepository{
-		сlient: сlient,
+		client: client,
 	}
 }
 
-// Get Get cahce places
+// Get cache places
 func (r *PlaceCacheRedisRepository) Get(ctx context.Context, key string) (model.PlaceList, error) {
 
-	result, err := r.сlient.Get(ctx, key).Result()
+	result, err := r.client.Get(ctx, key).Result()
 	if err == redis.Nil {
 		return nil, nil
 	} else if err != nil {
@@ -39,7 +39,7 @@ func (r *PlaceCacheRedisRepository) Get(ctx context.Context, key string) (model.
 	return places, nil
 }
 
-// Set Set cahce places
+// Set cache places
 func (r *PlaceCacheRedisRepository) Set(ctx context.Context, key string, places model.PlaceList, expiration time.Duration) error {
 
 	data, err := json.Marshal(places)
@@ -47,10 +47,10 @@ func (r *PlaceCacheRedisRepository) Set(ctx context.Context, key string, places 
 		return err
 	}
 
-	return r.сlient.Set(ctx, key, string(data), expiration).Err()
+	return r.client.Set(ctx, key, string(data), expiration).Err()
 }
 
 // Del Delete cache places
 func (r *PlaceCacheRedisRepository) Del(ctx context.Context, keys ...string) error {
-	return r.сlient.Del(ctx, keys...).Err()
+	return r.client.Del(ctx, keys...).Err()
 }

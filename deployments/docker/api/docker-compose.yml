@@ -7,9 +7,9 @@ services:
       context: ../../../
       dockerfile: ./deployments/docker/api/Dockerfile
     environment:
-      MONGO_URI: ${MONGO_URI}
+      MONGO_URL: ${MONGO_URL}
       MONGO_INITDB_NAME: ${MONGO_INITDB_NAME}
-      RABBITMQ_URI: ${RABBITMQ_URI}
+      RABBITMQ_URL: ${RABBITMQ_URL}
       RABBITMQ_EXCHANGE_TYPE: ${RABBITMQ_EXCHANGE_TYPE}
       RABBITMQ_EXCHANGE_REINDEX: ${RABBITMQ_EXCHANGE_REINDEX}
       RABBITMQ_ROUTING_PLACE_KEY: ${RABBITMQ_ROUTING_PLACE_KEY}
@@ -30,10 +30,7 @@ services:
       SITE_SCHEMA: ${SITE_SCHEMA}
       SITE_HOST: ${SITE_HOST}
       SITE_PORT: ${SITE_PORT}
-      REDIS_HOST: ${REDIS_HOST}
-      REDIS_PORT: ${REDIS_PORT}
-      REDIS_USERNAME: ${REDIS_USERNAME}
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_URL: ${REDIS_URL}
     networks:
       - netApplication
       - netNginx

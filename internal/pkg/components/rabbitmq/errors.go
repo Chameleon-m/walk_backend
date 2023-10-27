@@ -1,0 +1,16 @@
+package rabbitmq
+
+import "errors"
+
+var (
+	// ErrInvalidChannelMax ...
+	ErrInvalidChannelMax = errors.New("channelMax should be positive")
+	// ErrInvalidChannelMaxLimit ...
+	ErrInvalidChannelMaxLimit = errors.New("ChannelMax must be less than or equal to 65535")
+	// ErrInvalidFrameSize ...
+	ErrInvalidFrameSize = errors.New("frameSize should be positive")
+	// ErrInvalidHeartbeat ...
+	ErrInvalidHeartbeat = errors.New("heartbeat should be positive")
+	// ErrInvalidDial ...
+	ErrInvalidDial = errors.New("dial should be positive")
+)

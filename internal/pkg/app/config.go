@@ -3,7 +3,10 @@ package app
 import (
 	"flag"
 	"fmt"
-	"walk_backend/internal/pkg/components"
+	mongoComponent "walk_backend/internal/pkg/components/mongo"
+	rabitmqComponent "walk_backend/internal/pkg/components/rabbitmq"
+	redisComponent "walk_backend/internal/pkg/components/redis"
+	sessionComponent "walk_backend/internal/pkg/components/session"
 	"walk_backend/internal/pkg/util"
 )
 
@@ -30,17 +33,17 @@ type Config struct {
 	} `yaml:"site"`
 	Queue struct {
 		ReIndex struct {
-			Exchange string `yaml:"exchang" env:"RABBITMQ_EXCHANGE_REINDEX" env-default:"reindex_exchange" env-description:"Exchange for reindex"`
+			Exchange string `yaml:"exchange" env:"RABBITMQ_EXCHANGE_REINDEX" env-default:"reindex_exchange" env-description:"Exchange for reindex"`
 			Place    struct {
 				RoutingKey        string `yaml:"routing_key"   env:"RABBITMQ_ROUTING_PLACE_KEY"   env-default:"place_routing_key"   env-description:"Routing key for place"`
 				QueuePlaceReindex string `yaml:"queue"         env:"RABBITMQ_QUEUE_PLACE_REINDEX" env-default:"place_reindex_queue" env-description:"Queue name for place reindex"`
 			} `yaml:"place"`
 		} `yaml:"reindex"`
 	} `yaml:"queue"`
-	Redis    components.RedisConfig             `yaml:"redis_component"`
-	RabbitMQ components.RabbitMQConfig          `yaml:"rabbit_mq_component"`
-	MongoDB  components.MongoDBConfig           `yaml:"mongo_db_component"`
-	Session  components.SessionGinMongoDBConfig `yaml:"session_component"`
+	Redis    redisComponent.Config             `yaml:"redis_component"`
+	RabbitMQ rabitmqComponent.Config           `yaml:"rabbit_mq_component"`
+	MongoDB  mongoComponent.Config             `yaml:"mongo_db_component"`
+	Session  sessionComponent.GinMongoDBConfig `yaml:"session_component"`
 }
 
 func (cfg *Config) RegisterFlags(fs *flag.FlagSet) {

@@ -30,17 +30,14 @@ app:
         queue: 'place_reindex_queue'
 
   redis_component:
-    host: 'redis'
-    port: '6379'
-    username: 'username'
-    password: 'password'
+    url: 'redis://username:password@localhost:6379/0'
 
   rabbit_mq_component:
-    uri: 'amqp://guest:guest@localhost:5672/'
+    url: 'amqp://guest:guest@localhost:5672/'
 
   mongo_db_component:
     init_db_name: 'walk'
-    uri: 'mongodb://user:userpassword@localhost:27017/walk?authSource=walk&replicaSet=rs0&serverSelectionTimeoutMS=2000'
+    url: 'mongodb://user:userpassword@localhost:27017/walk?authSource=walk&replicaSet=rs0&serverSelectionTimeoutMS=2000'
 
   session_component:
     name: 'session_name'
