@@ -6,17 +6,17 @@ import (
 )
 
 type Config struct {
-	URI string `yaml:"uri" env:"RABBITMQ_URI" env-default:"amqp://guest:guest@localhost:5672/" env-description:"RabbitMQ connection URI"`
+	URL string `yaml:"url" env:"RABBITMQ_URL" env-default:"amqp://guest:guest@localhost:5672/" env-description:"RabbitMQ connection URL"`
 }
 
 func (cfg *Config) RegisterFlags(fs *flag.FlagSet) {
-	fs.StringVar(&cfg.URI, "rabbitmq-uri", cfg.URI, "RabbitMQ connection URI")
+	fs.StringVar(&cfg.URL, "rabbitmq-url", cfg.URL, "RabbitMQ connection URL")
 }
 
 func (cfg *Config) Validate() error {
 	// TODO
-	if cfg.URI == "" {
-		return fmt.Errorf("invalid URI")
+	if cfg.URL == "" {
+		return fmt.Errorf("invalid URL")
 	}
 	return nil
 }

@@ -52,10 +52,10 @@ func main() {
 	// ENV
 	workersCount := env.GetMustInt("RABBITMQ_CONSUMERS_PLACE_REINDEX_COUNT")
 
-	mongoURI := env.GetMust("MONGO_URL")
+	mongoURL := env.GetMust("MONGO_URL")
 	mongoDB := env.GetMust("MONGO_INITDB_NAME")
 
-	rabbitmqURL := env.GetMust("RABBITMQ_URI")
+	rabbitmqURL := env.GetMust("RABBITMQ_URL")
 	consumerTag := env.GetMust("RABBITMQ_CONSUMERS_PLACE_REINDEX_TAG")
 	exchange := env.GetMust("RABBITMQ_EXCHANGE_REINDEX")
 	exchangeType := env.GetMust("RABBITMQ_EXCHANGE_TYPE")
@@ -63,7 +63,7 @@ func main() {
 	routingKey := env.GetMust("RABBITMQ_ROUTING_PLACE_KEY")
 
 	// DB
-	mongoClient, err := mongo.Connect(ctx, options.Client().ApplyURI(mongoURI))
+	mongoClient, err := mongo.Connect(ctx, options.Client().ApplyURI(mongoURL))
 	if err != nil {
 		logErr.Fatal().Err(err).Caller().Send()
 	}
@@ -87,7 +87,11 @@ func main() {
 	if err != nil {
 		logErr.Fatal().Err(err).Caller().Send()
 	}
-	defer consumer.Close()
+	defer func() {
+		if err = consumer.Close(); err != nil {
+			log.Info().Err(err).Caller().Send()
+		}
+	}()
 
 	publisher, err := rabbitmq.NewPublisher(
 		rabbitmqURL,
@@ -97,7 +101,11 @@ func main() {
 	if err != nil {
 		logErr.Fatal().Err(err).Caller().Send()
 	}
-	defer publisher.Close()
+	defer func() {
+		if err = publisher.Close(); err != nil {
+			log.Info().Err(err).Caller().Send()
+		}
+	}()
 
 	log.Print("Connected to RabbitMQ")
 

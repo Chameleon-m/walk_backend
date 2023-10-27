@@ -149,7 +149,7 @@ func New(name string, log zerolog.Logger, config Config, opts ...Option) (*compo
 	}
 
 	return &component{
-		rabbitMQURL: config.URI,
+		rabbitMQURL: config.URL,
 		vhost:       vhost,
 		channelMax:  channelMax,
 		frameSize:   frameSize,
