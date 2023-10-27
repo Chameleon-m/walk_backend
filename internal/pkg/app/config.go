@@ -6,6 +6,7 @@ import (
 	"walk_backend/internal/pkg/components"
 	rabitmqComponent "walk_backend/internal/pkg/components/rabbitmq"
 	redisComponent "walk_backend/internal/pkg/components/redis"
+	sessionComponent "walk_backend/internal/pkg/components/session"
 	"walk_backend/internal/pkg/util"
 )
 
@@ -39,10 +40,10 @@ type Config struct {
 			} `yaml:"place"`
 		} `yaml:"reindex"`
 	} `yaml:"queue"`
-	Redis    redisComponent.Config              `yaml:"redis_component"`
-	RabbitMQ rabitmqComponent.Config            `yaml:"rabbit_mq_component"`
-	MongoDB  components.MongoDBConfig           `yaml:"mongo_db_component"`
-	Session  components.SessionGinMongoDBConfig `yaml:"session_component"`
+	Redis    redisComponent.Config             `yaml:"redis_component"`
+	RabbitMQ rabitmqComponent.Config           `yaml:"rabbit_mq_component"`
+	MongoDB  components.MongoDBConfig          `yaml:"mongo_db_component"`
+	Session  sessionComponent.GinMongoDBConfig `yaml:"session_component"`
 }
 
 func (cfg *Config) RegisterFlags(fs *flag.FlagSet) {

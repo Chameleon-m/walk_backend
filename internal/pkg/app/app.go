@@ -19,6 +19,7 @@ import (
 	"walk_backend/internal/pkg/components"
 	rabbitmqComponent "walk_backend/internal/pkg/components/rabbitmq"
 	redisComponent "walk_backend/internal/pkg/components/redis"
+	sessionComponent "walk_backend/internal/pkg/components/session"
 	"walk_backend/internal/pkg/logger"
 
 	"github.com/gin-gonic/gin"
@@ -123,17 +124,8 @@ func (app *App) Run() {
 	<-mongoDBComponent.Ready()
 	// Session // MongoDB store
 	sessionName := app.cfg.Session.Name
-	sessionComponent := components.NewSessionGinMongoDB(
-		"session",
-		app.logger,
-		app.cfg.Session.Secret,
-		app.cfg.Session.Path,
-		app.cfg.Session.Domain,
-		app.cfg.Session.MaxAge,
-		app.cfg.Session.DBName,
-		mongoDBComponent.GetClient(),
-	)
-	g.Go(func() error { return sessionComponent.Start(gCtx) })
+	sessionComponentInit := sessionComponent.NewGinMongoDB("session", app.logger, app.cfg.Session, mongoDBComponent.GetClient())
+	g.Go(func() error { return sessionComponentInit.Start(gCtx) })
 
 	if err := g.Wait(); err != nil {
 		log.Fatal().Err(err).Caller(0).Send()
@@ -165,7 +157,7 @@ func (app *App) Run() {
 	app.engine.Use(middleware.RequestAbsURL())
 
 	// session middleware
-	sessionMiddleware := middleware.Session(sessionName, sessionComponent.GetClient())
+	sessionMiddleware := middleware.Session(sessionName, sessionComponentInit.GetClient())
 
 	// auth middleware
 	authMiddleware := middleware.Auth()
