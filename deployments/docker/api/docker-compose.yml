@@ -7,7 +7,7 @@ services:
       context: ../../../
       dockerfile: ./deployments/docker/api/Dockerfile
     environment:
-      MONGO_URI: ${MONGO_URI}
+      MONGO_URL: ${MONGO_URL}
       MONGO_INITDB_NAME: ${MONGO_INITDB_NAME}
       RABBITMQ_URI: ${RABBITMQ_URI}
       RABBITMQ_EXCHANGE_TYPE: ${RABBITMQ_EXCHANGE_TYPE}

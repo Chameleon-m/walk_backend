@@ -3,7 +3,7 @@ package app
 import (
 	"flag"
 	"fmt"
-	"walk_backend/internal/pkg/components"
+	mongoComponent "walk_backend/internal/pkg/components/mongo"
 	rabitmqComponent "walk_backend/internal/pkg/components/rabbitmq"
 	redisComponent "walk_backend/internal/pkg/components/redis"
 	sessionComponent "walk_backend/internal/pkg/components/session"
@@ -42,7 +42,7 @@ type Config struct {
 	} `yaml:"queue"`
 	Redis    redisComponent.Config             `yaml:"redis_component"`
 	RabbitMQ rabitmqComponent.Config           `yaml:"rabbit_mq_component"`
-	MongoDB  components.MongoDBConfig          `yaml:"mongo_db_component"`
+	MongoDB  mongoComponent.Config             `yaml:"mongo_db_component"`
 	Session  sessionComponent.GinMongoDBConfig `yaml:"session_component"`
 }
 

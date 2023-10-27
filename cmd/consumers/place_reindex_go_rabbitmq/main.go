@@ -52,7 +52,7 @@ func main() {
 	// ENV
 	workersCount := env.GetMustInt("RABBITMQ_CONSUMERS_PLACE_REINDEX_COUNT")
 
-	mongoURI := env.GetMust("MONGO_URI")
+	mongoURI := env.GetMust("MONGO_URL")
 	mongoDB := env.GetMust("MONGO_INITDB_NAME")
 
 	rabbitmqURL := env.GetMust("RABBITMQ_URI")

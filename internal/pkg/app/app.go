@@ -16,7 +16,7 @@ import (
 	"walk_backend/internal/app/repository"
 	"walk_backend/internal/app/service"
 	"walk_backend/internal/pkg/cache"
-	"walk_backend/internal/pkg/components"
+	mongoComponent "walk_backend/internal/pkg/components/mongo"
 	rabbitmqComponent "walk_backend/internal/pkg/components/rabbitmq"
 	redisComponent "walk_backend/internal/pkg/components/redis"
 	sessionComponent "walk_backend/internal/pkg/components/session"
@@ -113,25 +113,25 @@ func (app *App) Run() {
 
 	// DB mongo
 	mongoDefaultDB := app.cfg.MongoDB.InitDBName
-	mongoDBComponent := components.NewMongoDB("mongoDB", app.logger, app.cfg.MongoDB.URI)
-	g.Go(func() error { return mongoDBComponent.Start(gCtx) })
+	mongoComponentInit := mongoComponent.New("mongoDB", app.logger, app.cfg.MongoDB)
+	g.Go(func() error { return mongoComponentInit.Start(gCtx) })
 	defer func() {
-		if err := mongoDBComponent.Stop(context.TODO()); err != nil {
+		if err := mongoComponentInit.Stop(context.TODO()); err != nil {
 			log.Error().Err(err).Caller(0).Send()
 		}
 	}()
 
-	<-mongoDBComponent.Ready()
+	<-mongoComponentInit.Ready()
 	// Session // MongoDB store
 	sessionName := app.cfg.Session.Name
-	sessionComponentInit := sessionComponent.NewGinMongoDB("session", app.logger, app.cfg.Session, mongoDBComponent.GetClient())
+	sessionComponentInit := sessionComponent.NewGinMongoDB("session", app.logger, app.cfg.Session, mongoComponentInit.GetClient())
 	g.Go(func() error { return sessionComponentInit.Start(gCtx) })
 
 	if err := g.Wait(); err != nil {
 		log.Fatal().Err(err).Caller(0).Send()
 	}
 
-	mongoClient := mongoDBComponent.GetClient()
+	mongoClient := mongoComponentInit.GetClient()
 	rabbitMQClient := rabbitMqPublisherComponentInit.GetClient()
 	redisClient := redisComponentInit.GetClient()
 

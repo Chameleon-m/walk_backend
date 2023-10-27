@@ -1,7 +1,7 @@
 ifneq (test, ${GIN_MODE})
-    migrateArgs := -source file://migrations -database "${MONGO_URI}" -verbose
+    migrateArgs := -source file://migrations -database "${MONGO_URL}" -verbose
 else
-    migrateArgs := -source file://migrations -database "${MONGO_URI_TEST}" -verbose
+    migrateArgs := -source file://migrations -database "${MONGO_URL_TEST}" -verbose
 endif
 
 BIN_DIR = $(PWD)/bin
