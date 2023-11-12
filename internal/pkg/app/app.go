@@ -90,7 +90,8 @@ func (app *App) Run() {
 	// Redis
 	redisComponentInit, err := redisComponent.New("redis", app.logger, app.cfg.Redis)
 	if err != nil {
-		log.Panic().Err(err).Caller(0).Send()
+		log.Error().Err(err).Caller(0).Send()
+		app.ctxCancel()
 	}
 	g.Go(func() error { return redisComponentInit.Start(gCtx) })
 	defer func() {
@@ -102,7 +103,8 @@ func (app *App) Run() {
 	// RabbitMQ
 	rabbitMqPublisherComponentInit, err := rabbitmqComponent.New("rabbitMQ", app.logger, app.cfg.RabbitMQ)
 	if err != nil {
-		log.Panic().Err(err).Caller(0).Send()
+		log.Error().Err(err).Caller(0).Send()
+		app.ctxCancel()
 	}
 	g.Go(func() error { return rabbitMqPublisherComponentInit.Start(gCtx) })
 	defer func() {
