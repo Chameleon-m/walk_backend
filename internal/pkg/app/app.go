@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -233,6 +234,9 @@ func (app *App) Run() {
 	server := &http.Server{
 		Addr:    ":" + app.cfg.Api.Port, //net.JoinHostPort(app.cfg.Api.Host, app.cfg.Api.Port),
 		Handler: app.engine,
+		BaseContext: func(_ net.Listener) context.Context {
+			return app.ctx
+		},
 		// TODO
 	}
 	// server.RegisterOnShutdown(func() {})
