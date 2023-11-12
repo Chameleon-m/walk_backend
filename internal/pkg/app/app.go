@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -90,7 +91,8 @@ func (app *App) Run() {
 	// Redis
 	redisComponentInit, err := redisComponent.New("redis", app.logger, app.cfg.Redis)
 	if err != nil {
-		log.Panic().Err(err).Caller(0).Send()
+		log.Error().Err(err).Caller(0).Send()
+		app.ctxCancel()
 	}
 	g.Go(func() error { return redisComponentInit.Start(gCtx) })
 	defer func() {
@@ -102,7 +104,8 @@ func (app *App) Run() {
 	// RabbitMQ
 	rabbitMqPublisherComponentInit, err := rabbitmqComponent.New("rabbitMQ", app.logger, app.cfg.RabbitMQ)
 	if err != nil {
-		log.Panic().Err(err).Caller(0).Send()
+		log.Error().Err(err).Caller(0).Send()
+		app.ctxCancel()
 	}
 	g.Go(func() error { return rabbitMqPublisherComponentInit.Start(gCtx) })
 	defer func() {
@@ -231,6 +234,9 @@ func (app *App) Run() {
 	server := &http.Server{
 		Addr:    ":" + app.cfg.Api.Port, //net.JoinHostPort(app.cfg.Api.Host, app.cfg.Api.Port),
 		Handler: app.engine,
+		BaseContext: func(_ net.Listener) context.Context {
+			return app.ctx
+		},
 		// TODO
 	}
 	// server.RegisterOnShutdown(func() {})
